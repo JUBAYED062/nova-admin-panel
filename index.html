@@ -96,7 +96,7 @@ h2{font-size:16px;margin:0 0 6px}p.h{color:var(--mut);margin:0 0 6px;font-size:1
       <label>Title</label><input id="nTitle" maxlength="80">
       <label>Message</label><textarea id="nBody"></textarea>
       <div class="row">
-        <div><label>Type</label><select id="nType"><option value="general">General</option><option value="update">Update</option><option value="maintenance">Maintenance</option></select></div>
+        <div><label>Type</label><select id="nType"><option value="general">General</option><option value="important">Important</option><option value="urgent">Urgent (also pops up)</option><option value="update">Update</option><option value="maintenance">Maintenance</option></select></div>
         <div><label>Pin on top</label><select id="nPin"><option value="false">No</option><option value="true">Yes</option></select></div>
       </div>
       <button class="p" id="btnNotice">Publish notice</button>
@@ -130,7 +130,7 @@ import { getFirestore, doc, getDoc, setDoc, addDoc, deleteDoc, updateDoc, collec
 
 const ADMIN_EMAIL = "jubayedking062@gmail.com";
 const app = initializeApp({
-  apiKey: "AIzaSyAxlA2UDjC-7JRePoneJfJA4Yy_YX0AKoc",
+  apiKey: "AIzaSyAxLA2UDjC-7JRePoneJfJA4Yy_YX0AKoc",
   authDomain: "nova-ai-80225.firebaseapp.com",
   projectId: "nova-ai-80225",
   appId: "1:1022599333976:web:df0881dcd2382eaecc222d"
