@@ -1,0 +1,307 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Nova Admin</title>
+<style>
+:root{--bg:#0b0d14;--card:#151826;--line:#262b40;--text:#eef0f7;--mut:#98a0bb;--acc:#7c6cff;--ok:#38d39f;--warn:#ffb84d;--bad:#ff5d6c}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:15px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+header{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--bg);z-index:5}
+h1{font-size:18px;margin:0}
+main{max-width:860px;margin:0 auto;padding:16px}
+nav{display:flex;gap:6px;overflow-x:auto;padding:10px 16px;border-bottom:1px solid var(--line);position:sticky;top:53px;background:var(--bg);z-index:4}
+nav button{flex:none;background:var(--card);color:var(--mut);border:1px solid var(--line);border-radius:999px;padding:8px 14px;font-size:14px}
+nav button.on{background:var(--acc);color:#fff;border-color:var(--acc)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:14px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px}
+.stat b{display:block;font-size:24px;margin-top:4px}
+.stat span{color:var(--mut);font-size:12px}
+label{display:block;color:var(--mut);font-size:13px;margin:12px 0 4px}
+input,textarea,select{width:100%;background:#0e1120;color:var(--text);border:1px solid var(--line);border-radius:10px;padding:10px;font:inherit}
+textarea{min-height:90px;resize:vertical}
+.row{display:flex;gap:10px;flex-wrap:wrap}.row>*{flex:1;min-width:140px}
+button.p,button.s,button.d{border:0;border-radius:10px;padding:11px 16px;font:inherit;font-weight:600;margin-top:14px;margin-right:8px}
+button.p{background:var(--acc);color:#fff}button.s{background:#262b40;color:var(--text)}button.d{background:#3a1d26;color:var(--bad)}
+.sw{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--line)}
+.sw input{width:auto;transform:scale(1.4)}
+.pill{display:inline-block;border-radius:999px;padding:2px 10px;font-size:12px;border:1px solid var(--line);color:var(--mut)}
+.ok{color:var(--ok)}.warn{color:var(--warn)}.bad{color:var(--bad)}
+.item{border-top:1px solid var(--line);padding:10px 0}.item:first-child{border-top:0}
+.item small{color:var(--mut)}
+.toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:#222844;padding:10px 16px;border-radius:10px;display:none;z-index:9;max-width:90%}
+#login{min-height:80vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:20px;gap:12px}
+.hide{display:none!important}
+h2{font-size:16px;margin:0 0 6px}p.h{color:var(--mut);margin:0 0 6px;font-size:13px}
+</style>
+</head>
+<body>
+<div id="login">
+  <h1>Nova AI – Admin</h1>
+  <p class="h">Only the Nova admin can sign in.</p>
+  <button class="p" id="btnLogin">Sign in with Google</button>
+  <div id="loginErr" class="bad"></div>
+</div>
+
+<div id="app" class="hide">
+<header><h1>Nova Admin</h1><div><span id="who" class="pill"></span> <button class="s" id="btnOut" style="margin:0 0 0 6px;padding:7px 12px">Log out</button></div></header>
+<nav id="nav"></nav>
+<main>
+  <section id="t-dash">
+    <div class="grid" id="stats"></div>
+    <div class="card" style="margin-top:14px"><h2>App versions in use</h2><div id="verTable"><small>Loading…</small></div></div>
+    <div class="card"><h2>Latest notices</h2><div id="dashNotices"><small>Loading…</small></div></div>
+  </section>
+
+  <section id="t-upd" class="hide">
+    <div class="card">
+      <h2>Publish a new version</h2>
+      <p class="h">Users do not need to uninstall. They install the new APK over the old one (same signing key).</p>
+      <div class="row">
+        <div><label>Version name (e.g. 1.3)</label><input id="vName"></div>
+        <div><label>Version code (number, must grow)</label><input id="vCode" type="number" inputmode="numeric"></div>
+      </div>
+      <label>What is new (shown to users)</label><textarea id="vNotes"></textarea>
+      <label>APK download link</label><input id="vUrl" placeholder="https://github.com/JUBAYED062/…/releases/download/…apk">
+      <div class="sw"><span>Force update<br><small class="pill">users below the minimum cannot use Nova until they update</small></span><input type="checkbox" id="vForce"></div>
+      <label>Minimum allowed version code (older versions are blocked when Force is on)</label>
+      <input id="vMin" type="number" inputmode="numeric" placeholder="0 = nobody blocked">
+      <div class="sw"><span>Also post as a notice</span><input type="checkbox" id="vNotice" checked></div>
+      <button class="p" id="btnPublish">Publish</button>
+    </div>
+    <div class="card"><h2>Version history</h2><div id="verList"><small>Loading…</small></div></div>
+  </section>
+
+  <section id="t-mt" class="hide">
+    <div class="card">
+      <h2>Maintenance</h2>
+      <div class="sw"><span>Maintenance on</span><input type="checkbox" id="mOn"></div>
+      <div class="sw"><span>Block the app completely<br><small class="pill">off = users see a message but can still use Nova</small></span><input type="checkbox" id="mBlock"></div>
+      <label>Reason / message shown to users</label><textarea id="mMsg"></textarea>
+      <div class="row">
+        <div><label>Starts (optional)</label><input id="mStart" type="datetime-local"></div>
+        <div><label>Ends (optional)</label><input id="mEnd" type="datetime-local"></div>
+      </div>
+      <p class="h">Leave start/end empty to apply right away until you turn it off.</p>
+      <button class="p" id="btnMt">Save maintenance</button>
+    </div>
+  </section>
+
+  <section id="t-nt" class="hide">
+    <div class="card">
+      <h2>New notice</h2>
+      <label>Title</label><input id="nTitle" maxlength="80">
+      <label>Message</label><textarea id="nBody"></textarea>
+      <div class="row">
+        <div><label>Type</label><select id="nType"><option value="general">General</option><option value="update">Update</option><option value="maintenance">Maintenance</option></select></div>
+        <div><label>Pin on top</label><select id="nPin"><option value="false">No</option><option value="true">Yes</option></select></div>
+      </div>
+      <button class="p" id="btnNotice">Publish notice</button>
+    </div>
+    <div class="card"><h2>All notices</h2><div id="noticeList"><small>Loading…</small></div></div>
+  </section>
+
+  <section id="t-ln" class="hide">
+    <div class="card">
+      <h2>APK download link</h2>
+      <label>Link</label><input id="lUrl" placeholder="https://…">
+      <button class="p" id="btnLinkSave">Save link</button>
+      <button class="s" id="btnLinkTest">Check link</button>
+      <button class="s" id="btnLinkOpen">Open</button>
+      <div id="linkRes" style="margin-top:10px"></div>
+      <p class="h">Tip: upload the APK to GitHub → Releases, then paste its download link here. The browser can only check whether the server answers, so "Open" is the best test.</p>
+    </div>
+  </section>
+
+  <section id="t-lg" class="hide">
+    <div class="card"><h2>Admin activity</h2><div id="logList"><small>Loading…</small></div></div>
+  </section>
+</main>
+</div>
+<div class="toast" id="toast"></div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getFirestore, doc, getDoc, setDoc, addDoc, deleteDoc, updateDoc, collection, getDocs, getCountFromServer, query, where, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const ADMIN_EMAIL = "jubayedking062@gmail.com";
+const app = initializeApp({
+  apiKey: "AIzaSyAxLA2UDjC-7JRePoneJfJA4Yy_YX0AKoc",
+  authDomain: "nova-ai-80225.firebaseapp.com",
+  projectId: "nova-ai-80225",
+  appId: "1:1022599333976:web:df0881dcd2382eaecc222d"
+});
+const auth = getAuth(app), db = getFirestore(app);
+const $ = id => document.getElementById(id);
+let cfg = {};
+
+function toast(m){const t=$("toast");t.textContent=m;t.style.display="block";clearTimeout(toast.t);toast.t=setTimeout(()=>t.style.display="none",3200)}
+function fmt(ms){const n=Number(ms);return n?new Date(n).toLocaleString():"-"}
+function el(tag,txt,cls){const e=document.createElement(tag);if(txt!=null)e.textContent=txt;if(cls)e.className=cls;return e}
+async function log(action,detail){try{await addDoc(collection(db,"admin_log"),{at:Date.now(),email:auth.currentUser.email,action,detail:String(detail||"").slice(0,300)})}catch(e){}}
+async function saveCfg(patch,action,detail){
+  await setDoc(doc(db,"config","app"),patch,{merge:true});
+  Object.assign(cfg,patch);
+  await log(action,detail);
+}
+function dtToMs(v){return v?new Date(v).getTime():0}
+function msToDt(ms){const n=Number(ms);if(!n)return"";const d=new Date(n);d.setMinutes(d.getMinutes()-d.getTimezoneOffset());return d.toISOString().slice(0,16)}
+
+// ---------- tabs ----------
+const tabs=[["dash","Dashboard"],["upd","Updates"],["mt","Maintenance"],["nt","Notices"],["ln","Download link"],["lg","Activity"]];
+const nav=$("nav");
+tabs.forEach(([k,n])=>{const b=el("button",n);b.dataset.k=k;b.onclick=()=>show(k);nav.appendChild(b)});
+function show(k){
+  tabs.forEach(([x])=>$("t-"+x).classList.toggle("hide",x!==k));
+  [...nav.children].forEach(b=>b.classList.toggle("on",b.dataset.k===k));
+  if(k==="dash")loadDash();if(k==="upd")loadVersions();if(k==="nt")loadNotices();if(k==="lg")loadLog();
+}
+
+// ---------- auth ----------
+$("btnLogin").onclick=async()=>{
+  $("loginErr").textContent="";
+  try{await signInWithPopup(auth,new GoogleAuthProvider())}catch(e){$("loginErr").textContent="Sign-in failed: "+(e.code||e.message)}
+};
+$("btnOut").onclick=()=>signOut(auth);
+onAuthStateChanged(auth,async u=>{
+  if(u && u.email===ADMIN_EMAIL && u.emailVerified){
+    $("login").classList.add("hide");$("app").classList.remove("hide");$("who").textContent=u.email;
+    await loadCfg();show("dash");
+  }else{
+    if(u){$("loginErr").textContent="This account is not allowed.";await signOut(auth)}
+    $("app").classList.add("hide");$("login").classList.remove("hide");
+  }
+});
+
+// ---------- config ----------
+async function loadCfg(){
+  const s=await getDoc(doc(db,"config","app"));cfg=s.exists()?s.data():{};
+  $("vName").value=cfg.latest_version_name||"";$("vCode").value=cfg.latest_version_code||"";
+  $("vNotes").value=cfg.update_notes||"";$("vUrl").value=cfg.update_url||"";
+  $("vForce").checked=cfg.force_update===true||cfg.force_update==="true";$("vMin").value=cfg.min_version_code||"";
+  $("mOn").checked=cfg.maintenance===true||cfg.maintenance==="true";
+  $("mBlock").checked=cfg.maintenance_block===true||cfg.maintenance_block==="true";
+  $("mMsg").value=cfg.maintenance_message||"";$("mStart").value=msToDt(cfg.maintenance_start);$("mEnd").value=msToDt(cfg.maintenance_end);
+  $("lUrl").value=cfg.update_url||"";
+}
+
+// ---------- dashboard ----------
+function stat(label,val,cls){const d=el("div",null,"stat");d.appendChild(el("span",label));const b=el("b",val);if(cls)b.className=cls;d.appendChild(b);return d}
+async function loadDash(){
+  await loadCfg();
+  const st=$("stats");st.replaceChildren();
+  let total="?",active="?";
+  try{total=(await getCountFromServer(collection(db,"users"))).data().count}catch(e){}
+  try{active=(await getCountFromServer(query(collection(db,"users"),where("lastSeen",">=",String(Date.now()-7*864e5))))).data().count}catch(e){}
+  const mOn=cfg.maintenance===true||cfg.maintenance==="true";
+  st.append(
+    stat("Total users",total),stat("Active (7 days)",active),
+    stat("Latest version",(cfg.latest_version_name||"-")+(cfg.latest_version_code?" ("+cfg.latest_version_code+")":"")),
+    stat("Force update",(cfg.force_update===true||cfg.force_update==="true")?"On":"Off",(cfg.force_update===true||cfg.force_update==="true")?"warn":""),
+    stat("Maintenance",mOn?"ON":"Off",mOn?"bad":"ok")
+  );
+  // versions in use
+  const vt=$("verTable");vt.replaceChildren();
+  try{
+    const snap=await getDocs(query(collection(db,"users"),limit(1000)));
+    const m={};snap.forEach(d=>{const v=d.data().versionName||"unknown";m[v]=(m[v]||0)+1});
+    const keys=Object.keys(m).sort((a,b)=>m[b]-m[a]);
+    if(!keys.length)vt.appendChild(el("small","No users recorded yet. They appear after they open the new app version."));
+    keys.forEach(k=>{const i=el("div",null,"item");i.appendChild(el("b","Version "+k));i.appendChild(el("span","  "+m[k]+" users","pill"));vt.appendChild(i)});
+  }catch(e){vt.appendChild(el("small","Could not read users: "+e.code))}
+  const dn=$("dashNotices");dn.replaceChildren();
+  try{
+    const s=await getDocs(query(collection(db,"notices"),orderBy("at","desc"),limit(3)));
+    if(s.empty)dn.appendChild(el("small","No notices."));
+    s.forEach(d=>{const x=d.data(),i=el("div",null,"item");i.appendChild(el("b",(x.pinned?"📌 ":"")+x.title));i.appendChild(el("div",x.body));i.appendChild(el("small",x.type+" · "+fmt(x.at)));dn.appendChild(i)});
+  }catch(e){dn.appendChild(el("small","Could not read notices."))}
+}
+
+// ---------- updates ----------
+$("btnPublish").onclick=async()=>{
+  const name=$("vName").value.trim(),code=parseInt($("vCode").value,10),notes=$("vNotes").value.trim(),url=$("vUrl").value.trim();
+  if(!name||!code){toast("Enter version name and code");return}
+  if(url&&!/^https:\/\//.test(url)){toast("Link must start with https://");return}
+  const force=$("vForce").checked,min=parseInt($("vMin").value,10)||0;
+  if(force&&!min){toast("Force update needs a minimum version code");return}
+  try{
+    await saveCfg({latest_version_name:name,latest_version_code:code,update_notes:notes,update_url:url,force_update:force,min_version_code:force?min:0},"publish_version",name+" ("+code+")");
+    await addDoc(collection(db,"versions"),{name,code,notes,url,at:Date.now(),force});
+    if($("vNotice").checked)await addDoc(collection(db,"notices"),{title:"Nova "+name+" is here",body:notes||"A new version is available.",type:"update",pinned:false,at:Date.now()});
+    toast("Published");loadVersions();$("lUrl").value=url;
+  }catch(e){toast("Failed: "+(e.code||e.message))}
+};
+async function loadVersions(){
+  const box=$("verList");box.replaceChildren();
+  try{
+    const s=await getDocs(query(collection(db,"versions"),orderBy("at","desc"),limit(20)));
+    if(s.empty)box.appendChild(el("small","Nothing published yet."));
+    s.forEach(d=>{const x=d.data(),i=el("div",null,"item");i.appendChild(el("b",x.name+" ("+x.code+")"+(x.force?"  · forced":"")));if(x.notes)i.appendChild(el("div",x.notes));i.appendChild(el("small",fmt(x.at)));box.appendChild(i)});
+  }catch(e){box.appendChild(el("small","Could not read: "+e.code))}
+}
+
+// ---------- maintenance ----------
+$("btnMt").onclick=async()=>{
+  const on=$("mOn").checked,s=dtToMs($("mStart").value),e=dtToMs($("mEnd").value);
+  if(s&&e&&e<=s){toast("End must be after start");return}
+  try{
+    await saveCfg({maintenance:on,maintenance_block:$("mBlock").checked,maintenance_message:$("mMsg").value.trim()||"We'll be back shortly.",maintenance_start:s,maintenance_end:e},"maintenance",on?"on":"off");
+    toast("Saved")
+  }catch(e){toast("Failed: "+(e.code||e.message))}
+};
+
+// ---------- notices ----------
+$("btnNotice").onclick=async()=>{
+  const title=$("nTitle").value.trim(),body=$("nBody").value.trim();
+  if(!title){toast("Write a title");return}
+  try{
+    await addDoc(collection(db,"notices"),{title,body,type:$("nType").value,pinned:$("nPin").value==="true",at:Date.now()});
+    await log("notice_add",title);$("nTitle").value="";$("nBody").value="";toast("Published");loadNotices();
+  }catch(e){toast("Failed: "+(e.code||e.message))}
+};
+async function loadNotices(){
+  const box=$("noticeList");box.replaceChildren();
+  try{
+    const s=await getDocs(query(collection(db,"notices"),orderBy("at","desc"),limit(60)));
+    if(s.empty)box.appendChild(el("small","No notices."));
+    s.forEach(d=>{
+      const x=d.data(),i=el("div",null,"item");
+      i.appendChild(el("b",(x.pinned?"📌 ":"")+x.title));i.appendChild(el("div",x.body||""));i.appendChild(el("small",x.type+" · "+fmt(x.at)));
+      const r=el("div");
+      const pin=el("button",x.pinned?"Unpin":"Pin","s");pin.onclick=async()=>{await updateDoc(doc(db,"notices",d.id),{pinned:!x.pinned});await log("notice_pin",x.title);loadNotices()};
+      const del=el("button","Delete","d");del.onclick=async()=>{if(confirm("Delete this notice?")){await deleteDoc(doc(db,"notices",d.id));await log("notice_delete",x.title);loadNotices()}};
+      r.append(pin,del);i.appendChild(r);box.appendChild(i);
+    });
+  }catch(e){box.appendChild(el("small","Could not read: "+e.code))}
+}
+
+// ---------- link ----------
+$("btnLinkSave").onclick=async()=>{
+  const u=$("lUrl").value.trim();
+  if(u&&!/^https:\/\//.test(u)){toast("Link must start with https://");return}
+  try{await saveCfg({update_url:u},"link_change",u);$("vUrl").value=u;toast("Saved")}catch(e){toast("Failed: "+(e.code||e.message))}
+};
+$("btnLinkOpen").onclick=()=>{const u=$("lUrl").value.trim();if(u)window.open(u,"_blank","noopener")};
+$("btnLinkTest").onclick=async()=>{
+  const u=$("lUrl").value.trim(),r=$("linkRes");r.textContent="Checking…";r.className="";
+  if(!/^https:\/\//.test(u)){r.textContent="Enter a link that starts with https://";r.className="bad";return}
+  try{await fetch(u,{method:"HEAD",mode:"no-cors"});r.textContent="The server answered. Press Open to be sure the download starts.";r.className="ok"}
+  catch(e){r.textContent="The link did not answer. Check it.";r.className="bad"}
+};
+
+// ---------- log ----------
+async function loadLog(){
+  const box=$("logList");box.replaceChildren();
+  try{
+    const s=await getDocs(query(collection(db,"admin_log"),orderBy("at","desc"),limit(50)));
+    if(s.empty)box.appendChild(el("small","Nothing yet."));
+    s.forEach(d=>{const x=d.data(),i=el("div",null,"item");i.appendChild(el("b",x.action));i.appendChild(el("div",x.detail||""));i.appendChild(el("small",fmt(x.at)+" · "+x.email));box.appendChild(i)});
+  }catch(e){box.appendChild(el("small","Could not read: "+e.code))}
+}
+</script>
+</body>
+</html>
