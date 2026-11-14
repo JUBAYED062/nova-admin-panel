@@ -195,8 +195,8 @@ async function loadDash(){
   await loadCfg();
   const st=$("stats");st.replaceChildren();
   let total="?",active="?";
-  try{total=(await getCountFromServer(collection(db,"users"))).data().count}catch(e){}
-  try{active=(await getCountFromServer(query(collection(db,"users"),where("lastSeen",">=",String(Date.now()-7*864e5))))).data().count}catch(e){}
+  try{total=(await getCountFromServer(collection(db,"usage"))).data().count}catch(e){}
+  try{active=(await getCountFromServer(query(collection(db,"usage"),where("lastSeen",">=",String(Date.now()-7*864e5))))).data().count}catch(e){}
   const mOn=cfg.maintenance===true||cfg.maintenance==="true";
   st.append(
     stat("Total users",total),stat("Active (7 days)",active),
@@ -207,12 +207,12 @@ async function loadDash(){
   // versions in use
   const vt=$("verTable");vt.replaceChildren();
   try{
-    const snap=await getDocs(query(collection(db,"users"),limit(1000)));
+    const snap=await getDocs(query(collection(db,"usage"),limit(1000)));
     const m={};snap.forEach(d=>{const v=d.data().versionName||"unknown";m[v]=(m[v]||0)+1});
     const keys=Object.keys(m).sort((a,b)=>m[b]-m[a]);
     if(!keys.length)vt.appendChild(el("small","No users recorded yet. They appear after they open the new app version."));
     keys.forEach(k=>{const i=el("div",null,"item");i.appendChild(el("b","Version "+k));i.appendChild(el("span","  "+m[k]+" users","pill"));vt.appendChild(i)});
-  }catch(e){vt.appendChild(el("small","Could not read users: "+e.code))}
+  }catch(e){vt.appendChild(el("small","Could not read usage: "+e.code))}
   const dn=$("dashNotices");dn.replaceChildren();
   try{
     const s=await getDocs(query(collection(db,"notices"),orderBy("at","desc"),limit(3)));
