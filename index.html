@@ -116,6 +116,14 @@ h2{font-size:16px;margin:0 0 6px}p.h{color:var(--mut);margin:0 0 6px;font-size:1
     </div>
   </section>
 
+  <section id="t-fb" class="hide">
+    <div class="card">
+      <h2>Feedback from users</h2>
+      <div class="row"><div><label>Show</label><select id="fbFilter"><option value="new">New</option><option value="solved">Solved</option><option value="all">All</option></select></div></div>
+      <div id="fbList" style="margin-top:8px"><small>Loading…</small></div>
+    </div>
+  </section>
+
   <section id="t-lg" class="hide">
     <div class="card"><h2>Admin activity</h2><div id="logList"><small>Loading…</small></div></div>
   </section>
@@ -130,7 +138,7 @@ import { getFirestore, doc, getDoc, setDoc, addDoc, deleteDoc, updateDoc, collec
 
 const ADMIN_EMAIL = "jubayedking062@gmail.com";
 const app = initializeApp({
-  apiKey: "AIzaSyAxlA2UDjC-7JRePoneJfJA4Yy_YX0AKoc",
+  apiKey: "AIzaSyAxLA2UDjC-7JRePoneJfJA4Yy_YX0AKoc",
   authDomain: "nova-ai-80225.firebaseapp.com",
   projectId: "nova-ai-80225",
   appId: "1:1022599333976:web:df0881dcd2382eaecc222d"
@@ -152,13 +160,13 @@ function dtToMs(v){return v?new Date(v).getTime():0}
 function msToDt(ms){const n=Number(ms);if(!n)return"";const d=new Date(n);d.setMinutes(d.getMinutes()-d.getTimezoneOffset());return d.toISOString().slice(0,16)}
 
 // ---------- tabs ----------
-const tabs=[["dash","Dashboard"],["upd","Updates"],["mt","Maintenance"],["nt","Notices"],["ln","Download link"],["lg","Activity"]];
+const tabs=[["dash","Dashboard"],["upd","Updates"],["mt","Maintenance"],["nt","Notices"],["ln","Download link"],["fb","Feedback"],["lg","Activity"]];
 const nav=$("nav");
 tabs.forEach(([k,n])=>{const b=el("button",n);b.dataset.k=k;b.onclick=()=>show(k);nav.appendChild(b)});
 function show(k){
   tabs.forEach(([x])=>$("t-"+x).classList.toggle("hide",x!==k));
   [...nav.children].forEach(b=>b.classList.toggle("on",b.dataset.k===k));
-  if(k==="dash")loadDash();if(k==="upd")loadVersions();if(k==="nt")loadNotices();if(k==="lg")loadLog();
+  if(k==="dash")loadDash();if(k==="upd")loadVersions();if(k==="nt")loadNotices();if(k==="lg")loadLog();if(k==="fb")loadFeedback();
 }
 
 // ---------- auth ----------
@@ -292,6 +300,31 @@ $("btnLinkTest").onclick=async()=>{
   try{await fetch(u,{method:"HEAD",mode:"no-cors"});r.textContent="The server answered. Press Open to be sure the download starts.";r.className="ok"}
   catch(e){r.textContent="The link did not answer. Check it.";r.className="bad"}
 };
+
+// ---------- feedback ----------
+$("fbFilter").onchange=()=>loadFeedback();
+const TYPE={bug:"Problem",idea:"Suggestion",other:"Other"};
+async function loadFeedback(){
+  const box=$("fbList");box.replaceChildren();
+  try{
+    const s=await getDocs(query(collection(db,"feedback"),orderBy("at","desc"),limit(100)));
+    const f=$("fbFilter").value;let n=0;
+    s.forEach(d=>{
+      const x=d.data(),solved=x.status==="solved";
+      if(f==="new"&&solved)return;if(f==="solved"&&!solved)return;n++;
+      const i=el("div",null,"item");
+      const h=el("div");h.appendChild(el("b",(TYPE[x.type]||"Other")+" "));h.appendChild(el("span",solved?"solved":"new","pill"));i.appendChild(h);
+      i.appendChild(el("div",x.message||""));
+      if(x.contact)i.appendChild(el("div","Reply to: "+x.contact,"ok"));
+      i.appendChild(el("small","Nova "+(x.versionName||"?")+" ("+(x.versionCode||"?")+") · "+(x.device||"?")+" · Android "+(x.android||"?")+" · "+fmt(x.at)));
+      const r=el("div");
+      const b=el("button",solved?"Reopen":"Mark solved","s");b.onclick=async()=>{await updateDoc(doc(db,"feedback",d.id),{status:solved?"new":"solved"});await log("feedback_status",d.id);loadFeedback()};
+      const del=el("button","Delete","d");del.onclick=async()=>{if(confirm("Delete this message?")){await deleteDoc(doc(db,"feedback",d.id));await log("feedback_delete",d.id);loadFeedback()}};
+      r.append(b,del);i.appendChild(r);box.appendChild(i);
+    });
+    if(!n)box.appendChild(el("small","Nothing here."));
+  }catch(e){box.appendChild(el("small","Could not read: "+(e.code||e.message)))}
+}
 
 // ---------- log ----------
 async function loadLog(){
