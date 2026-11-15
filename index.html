@@ -53,6 +53,12 @@ h2{font-size:16px;margin:0 0 6px}p.h{color:var(--mut);margin:0 0 6px;font-size:1
   <section id="t-dash">
     <div class="grid" id="stats"></div>
     <div class="card" style="margin-top:14px"><h2>App versions in use</h2><div id="verTable"><small>Loading…</small></div></div>
+    <div class="card"><h2>New users per day (last 14 days)</h2><div id="chNew"><small>Loading…</small></div></div>
+    <div class="card"><h2>Activity</h2><div id="chAct"><small>Loading…</small></div></div>
+    <div class="card"><h2>Phones (brand and model)</h2><div id="chDev"><small>Loading…</small></div></div>
+    <div class="card"><h2>Android versions</h2><div id="chAnd"><small>Loading…</small></div></div>
+    <div class="card"><h2>Countries</h2><div id="chCty"><small>Loading…</small></div></div>
+    <div class="card"><h2>Languages</h2><div id="chLng"><small>Loading…</small></div></div>
     <div class="card"><h2>Latest notices</h2><div id="dashNotices"><small>Loading…</small></div></div>
   </section>
 
@@ -138,7 +144,7 @@ import { getFirestore, doc, getDoc, setDoc, addDoc, deleteDoc, updateDoc, collec
 
 const ADMIN_EMAIL = "jubayedking062@gmail.com";
 const app = initializeApp({
-  apiKey: "AIzaSyAxlA2UDjC-7JRePoneJfJA4Yy_YX0AKoc",
+  apiKey: "AIzaSyAxLA2UDjC-7JRePoneJfJA4Yy_YX0AKoc",
   authDomain: "nova-ai-80225.firebaseapp.com",
   projectId: "nova-ai-80225",
   appId: "1:1022599333976:web:df0881dcd2382eaecc222d"
@@ -197,6 +203,36 @@ async function loadCfg(){
   $("lUrl").value=cfg.update_url||"";
 }
 
+// ---------- charts ----------
+function bars(id,map,top,keep){
+  const box=$(id);box.replaceChildren();
+  let ks=Object.keys(map);if(!keep)ks=ks.sort((a,b)=>map[b]-map[a]);ks=ks.slice(0,top||10);
+  if(!ks.length){box.appendChild(el("small","No data yet. It fills in as people update to the new app version."));return}
+  const mx=Math.max(1,...ks.map(k=>map[k]));
+  ks.forEach(k=>{
+    const r=el("div");r.style.cssText="display:flex;align-items:center;gap:8px;margin:5px 0";
+    const l=el("span",k);l.style.cssText="flex:0 0 38%;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap";
+    const w=el("div");w.style.cssText="flex:1;background:rgba(255,255,255,.08);border-radius:6px;height:14px";
+    const b=el("div");b.style.cssText="height:14px;border-radius:6px;background:#7C3AED;width:"+Math.max(3,Math.round(map[k]/mx*100))+"%";w.appendChild(b);
+    r.append(l,w,el("b",String(map[k])));box.appendChild(r);
+  });
+}
+function drawStats(rows){
+  const day=864e5,now=Date.now(),cnt=(o,k)=>{o[k]=(o[k]||0)+1};
+  const nu={},dev={},and={},cty={},lng={};
+  for(let i=13;i>=0;i--){nu[new Date(now-i*day).toISOString().slice(5,10)]=0}
+  let a1=0,a7=0,a30=0;
+  rows.forEach(x=>{
+    const f=Number(x.firstSeen),l=Number(x.lastSeen);
+    const k=new Date(f).toISOString().slice(5,10);if(k in nu)nu[k]++;
+    if(now-l<day)a1++;if(now-l<7*day)a7++;if(now-l<30*day)a30++;
+    cnt(dev,x.device||"unknown");cnt(and,x.android?"Android "+x.android:"unknown");cnt(cty,x.country||"unknown");cnt(lng,x.lang||"unknown");
+  });
+  bars("chNew",nu,14,true);
+  bars("chAct",{"Today":a1,"Last 7 days":a7,"Last 30 days":a30},3,true);
+  bars("chDev",dev,10);bars("chAnd",and,10);bars("chCty",cty,15);bars("chLng",lng,8);
+}
+
 // ---------- dashboard ----------
 function stat(label,val,cls){const d=el("div",null,"stat");d.appendChild(el("span",label));const b=el("b",val);if(cls)b.className=cls;d.appendChild(b);return d}
 async function loadDash(){
@@ -216,6 +252,8 @@ async function loadDash(){
   const vt=$("verTable");vt.replaceChildren();
   try{
     const snap=await getDocs(query(collection(db,"usage"),limit(1000)));
+    const rows=[];snap.forEach(d=>rows.push(d.data()));
+    drawStats(rows);
     const m={};snap.forEach(d=>{const v=d.data().versionName||"unknown";m[v]=(m[v]||0)+1});
     const keys=Object.keys(m).sort((a,b)=>m[b]-m[a]);
     if(!keys.length)vt.appendChild(el("small","No users recorded yet. They appear after they open the new app version."));
