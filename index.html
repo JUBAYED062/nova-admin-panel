@@ -134,7 +134,7 @@ h2{font-size:16px;margin:0 0 6px}p.h{color:var(--mut);margin:0 0 6px;font-size:1
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { getFirestore, doc, getDoc, setDoc, addDoc, deleteDoc, updateDoc, collection, getDocs, getCountFromServer, query, where, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getFirestore, doc, getDoc, setDoc, addDoc, deleteDoc, updateDoc, collection, getDocs, writeBatch, getCountFromServer, query, where, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const ADMIN_EMAIL = "jubayedking062@gmail.com";
 const app = initializeApp({
@@ -248,7 +248,9 @@ async function loadVersions(){
   try{
     const s=await getDocs(query(collection(db,"versions"),orderBy("at","desc"),limit(20)));
     if(s.empty)box.appendChild(el("small","Nothing published yet."));
-    s.forEach(d=>{const x=d.data(),i=el("div",null,"item");i.appendChild(el("b",x.name+" ("+x.code+")"+(x.force?"  · forced":"")));if(x.notes)i.appendChild(el("div",x.notes));i.appendChild(el("small",fmt(x.at)));box.appendChild(i)});
+    const sels=[];
+    s.forEach(d=>{const x=d.data(),i=el("div",null,"item");const cb=el("input");cb.type="checkbox";sels.push({id:d.id,cb});i.appendChild(cb);i.appendChild(el("b",x.name+" ("+x.code+")"+(x.force?"  · forced":"")));if(x.notes)i.appendChild(el("div",x.notes));i.appendChild(el("small",fmt(x.at)));box.appendChild(i)});
+    {const bb=document.createElement("div");bulkBar(bb,"versions",sels,loadVersions,false);box.prepend(bb)}
   }catch(e){box.appendChild(el("small","Could not read: "+e.code))}
 }
 
@@ -276,14 +278,17 @@ async function loadNotices(){
   try{
     const s=await getDocs(query(collection(db,"notices"),orderBy("at","desc"),limit(60)));
     if(s.empty)box.appendChild(el("small","No notices."));
+    const sels=[];
     s.forEach(d=>{
       const x=d.data(),i=el("div",null,"item");
+      const cb=el("input");cb.type="checkbox";sels.push({id:d.id,cb});i.appendChild(cb);
       i.appendChild(el("b",(x.pinned?"📌 ":"")+x.title));i.appendChild(el("div",x.body||""));i.appendChild(el("small",x.type+" · "+fmt(x.at)));
       const r=el("div");
       const pin=el("button",x.pinned?"Unpin":"Pin","s");pin.onclick=async()=>{await updateDoc(doc(db,"notices",d.id),{pinned:!x.pinned});await log("notice_pin",x.title);loadNotices()};
       const del=el("button","Delete","d");del.onclick=async()=>{if(confirm("Delete this notice?")){await deleteDoc(doc(db,"notices",d.id));await log("notice_delete",x.title);loadNotices()}};
       r.append(pin,del);i.appendChild(r);box.appendChild(i);
     });
+    {const bb=document.createElement("div");bulkBar(bb,"notices",sels,loadNotices,false);box.prepend(bb)}
   }catch(e){box.appendChild(el("small","Could not read: "+e.code))}
 }
 
@@ -301,6 +306,34 @@ $("btnLinkTest").onclick=async()=>{
   catch(e){r.textContent="The link did not answer. Check it.";r.className="bad"}
 };
 
+
+// ---------- bulk actions ----------
+async function bulk(coll,ids,kind,label){
+  if(!ids.length){toast("Nothing selected");return}
+  if(!confirm((kind==="delete"?"Delete ":"Approve ")+ids.length+" "+label+"?"))return;
+  try{
+    for(let i=0;i<ids.length;i+=400){
+      const b=writeBatch(db);
+      ids.slice(i,i+400).forEach(id=>{const r=doc(db,coll,id);kind==="delete"?b.delete(r):b.update(r,{status:"approved"})});
+      await b.commit();
+    }
+    await log(coll+"_bulk_"+kind,String(ids.length));toast("Done: "+ids.length);
+  }catch(e){toast("Failed: "+(e.code||e.message))}
+}
+function bulkBar(box,coll,items,reload,withApprove){
+  if(!items.length)return;
+  const bar=el("div",null,"item");
+  const all=el("input");all.type="checkbox";all.id="selAll_"+coll;
+  const lb=el("span"," Select all ("+items.length+")");
+  const sel=()=>items.filter(x=>x.cb.checked).map(x=>x.id);
+  all.onchange=()=>items.forEach(x=>x.cb.checked=all.checked);
+  bar.append(all,lb,el("br"));
+  const run=async(ids,k)=>{await bulk(coll,ids,k,coll==="feedback"?"reports":coll);reload()};
+  if(withApprove){const a=el("button","Approve selected","s");a.onclick=()=>run(sel(),"approve");const a2=el("button","Approve all shown","s");a2.onclick=()=>run(items.map(x=>x.id),"approve");bar.append(a,a2)}
+  const d=el("button","Delete selected","d");d.onclick=()=>run(sel(),"delete");
+  const d2=el("button","Delete all shown","d");d2.onclick=()=>run(items.map(x=>x.id),"delete");
+  bar.append(d,d2);box.appendChild(bar);
+}
 // ---------- feedback ----------
 $("fbFilter").onchange=()=>loadFeedback();
 const TYPE={bug:"Problem",idea:"Suggestion",other:"Other"};
@@ -308,7 +341,7 @@ async function loadFeedback(){
   const box=$("fbList");box.replaceChildren();
   try{
     const s=await getDocs(query(collection(db,"feedback"),orderBy("at","desc"),limit(100)));
-    const f=$("fbFilter").value;let n=0;
+    const f=$("fbFilter").value;let n=0;const sels=[];
     s.forEach(d=>{
       const x=d.data(),solved=(x.status==="approved"||x.status==="solved");
       if(f==="new"&&solved)return;if(f==="solved"&&!solved)return;n++;
@@ -320,9 +353,11 @@ async function loadFeedback(){
       const r=el("div");
       const b=el("button",solved?"Reopen":"Approve","s");b.onclick=async()=>{await updateDoc(doc(db,"feedback",d.id),{status:solved?"new":"approved"});await log("feedback_status",d.id);loadFeedback()};
       const del=el("button","Delete","d");del.onclick=async()=>{if(confirm("Delete this message?")){await deleteDoc(doc(db,"feedback",d.id));await log("feedback_delete",d.id);loadFeedback()}};
+      const cb=el("input");cb.type="checkbox";sels.push({id:d.id,cb});i.prepend(cb);
       r.append(b,del);i.appendChild(r);box.appendChild(i);
     });
     if(!n)box.appendChild(el("small","Nothing here."));
+    else{const bb=document.createElement("div");bulkBar(bb,"feedback",sels,loadFeedback,true);box.prepend(bb)}
   }catch(e){box.appendChild(el("small","Could not read: "+(e.code||e.message)))}
 }
 
