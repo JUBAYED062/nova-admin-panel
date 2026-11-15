@@ -119,8 +119,8 @@ h2{font-size:16px;margin:0 0 6px}p.h{color:var(--mut);margin:0 0 6px;font-size:1
   <section id="t-fb" class="hide">
     <div class="card">
       <h2>Feedback from users</h2>
-      <div class="row"><div><label>Show</label><select id="fbFilter"><option value="new">New</option><option value="solved">Solved</option><option value="all">All</option></select></div></div>
-      <div id="fbList" style="margin-top:8px"><small>Loading…</small></div>
+      <div class="row"><div><label>Show</label><select id="fbFilter"><option value="new">New</option><option value="solved">Approved</option><option value="all">All</option></select></div></div>
+      <small>Each account has one report slot. After you Approve or Delete a report, that user can send a new one (24 hours after their last report).</small><div id="fbList" style="margin-top:8px"><small>Loading…</small></div>
     </div>
   </section>
 
@@ -310,15 +310,15 @@ async function loadFeedback(){
     const s=await getDocs(query(collection(db,"feedback"),orderBy("at","desc"),limit(100)));
     const f=$("fbFilter").value;let n=0;
     s.forEach(d=>{
-      const x=d.data(),solved=x.status==="solved";
+      const x=d.data(),solved=(x.status==="approved"||x.status==="solved");
       if(f==="new"&&solved)return;if(f==="solved"&&!solved)return;n++;
       const i=el("div",null,"item");
-      const h=el("div");h.appendChild(el("b",(TYPE[x.type]||"Other")+" "));h.appendChild(el("span",solved?"solved":"new","pill"));i.appendChild(h);
+      const h=el("div");h.appendChild(el("b",(TYPE[x.type]||"Other")+" "));h.appendChild(el("span",solved?"approved":"new","pill"));i.appendChild(h);
       i.appendChild(el("div",x.message||""));
       if(x.contact)i.appendChild(el("div","Reply to: "+x.contact,"ok"));
       i.appendChild(el("small","Nova "+(x.versionName||"?")+" ("+(x.versionCode||"?")+") · "+(x.device||"?")+" · Android "+(x.android||"?")+" · "+fmt(x.at)));
       const r=el("div");
-      const b=el("button",solved?"Reopen":"Mark solved","s");b.onclick=async()=>{await updateDoc(doc(db,"feedback",d.id),{status:solved?"new":"solved"});await log("feedback_status",d.id);loadFeedback()};
+      const b=el("button",solved?"Reopen":"Approve","s");b.onclick=async()=>{await updateDoc(doc(db,"feedback",d.id),{status:solved?"new":"approved"});await log("feedback_status",d.id);loadFeedback()};
       const del=el("button","Delete","d");del.onclick=async()=>{if(confirm("Delete this message?")){await deleteDoc(doc(db,"feedback",d.id));await log("feedback_delete",d.id);loadFeedback()}};
       r.append(b,del);i.appendChild(r);box.appendChild(i);
     });
