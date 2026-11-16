@@ -101,6 +101,7 @@ h2{font-size:16px;margin:0 0 6px}p.h{color:var(--mut);margin:0 0 6px;font-size:1
       <h2>New notice</h2>
       <label>Title</label><input id="nTitle" maxlength="80">
       <label>Message</label><textarea id="nBody"></textarea>
+      <label>Image link (optional, https://… direct picture link)</label><input id="nImg" placeholder="https://example.com/pic.jpg">
       <div class="row">
         <div><label>Type</label><select id="nType"><option value="general">General</option><option value="important">Important</option><option value="urgent">Urgent (also pops up)</option><option value="update">Update</option><option value="maintenance">Maintenance</option></select></div>
         <div><label>Pin on top</label><select id="nPin"><option value="false">No</option><option value="true">Yes</option></select></div>
@@ -304,11 +305,12 @@ $("btnMt").onclick=async()=>{
 
 // ---------- notices ----------
 $("btnNotice").onclick=async()=>{
-  const title=$("nTitle").value.trim(),body=$("nBody").value.trim();
+  const title=$("nTitle").value.trim(),body=$("nBody").value.trim(),image=$("nImg").value.trim();
   if(!title){toast("Write a title");return}
+  if(image&&!/^https:\/\//.test(image)){toast("Image link must start with https://");return}
   try{
-    await addDoc(collection(db,"notices"),{title,body,type:$("nType").value,pinned:$("nPin").value==="true",at:Date.now()});
-    await log("notice_add",title);$("nTitle").value="";$("nBody").value="";toast("Published");loadNotices();
+    await addDoc(collection(db,"notices"),{title,body,type:$("nType").value,pinned:$("nPin").value==="true",image,at:Date.now()});
+    await log("notice_add",title);$("nTitle").value="";$("nBody").value="";$("nImg").value="";toast("Published");loadNotices();
   }catch(e){toast("Failed: "+(e.code||e.message))}
 };
 async function loadNotices(){
@@ -320,7 +322,7 @@ async function loadNotices(){
     s.forEach(d=>{
       const x=d.data(),i=el("div",null,"item");
       const cb=el("input");cb.type="checkbox";sels.push({id:d.id,cb});i.appendChild(cb);
-      i.appendChild(el("b",(x.pinned?"📌 ":"")+x.title));i.appendChild(el("div",x.body||""));i.appendChild(el("small",x.type+" · "+fmt(x.at)));
+      i.appendChild(el("b",(x.pinned?"📌 ":"")+x.title));i.appendChild(el("div",x.body||""));if(x.image){const im=el("img");im.src=x.image;im.style.maxWidth="160px";im.style.display="block";i.appendChild(im)}i.appendChild(el("small",x.type+" · "+fmt(x.at)));
       const r=el("div");
       const pin=el("button",x.pinned?"Unpin":"Pin","s");pin.onclick=async()=>{await updateDoc(doc(db,"notices",d.id),{pinned:!x.pinned});await log("notice_pin",x.title);loadNotices()};
       const del=el("button","Delete","d");del.onclick=async()=>{if(confirm("Delete this notice?")){await deleteDoc(doc(db,"notices",d.id));await log("notice_delete",x.title);loadNotices()}};
