@@ -1,180 +1,138 @@
-
-<!DOCTYPE html>
-<html lang="en">
+<!doctype html>
+<html lang="bn">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="theme-color" content="#0b0d14">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Nova AI – Download</title>
-
 <style>
+:root{--bg:#0b1220;--card:#141d33;--text:#e8edf7;--mute:#9fb0cf;--acc:#22d3ee;--acc2:#7c5cff;--line:#26324f;--warn:#fbbf24}
+@media (prefers-color-scheme:light){:root{--bg:#f4f7fc;--card:#fff;--text:#142036;--mute:#53627f;--acc:#0a7ea4;--acc2:#5b3fd6;--line:#dbe3f1;--warn:#b45309}}
 *{box-sizing:border-box}
-body{
-  margin:0;
-  font-family:Arial,sans-serif;
-  background:#0b0d14;
-  color:#eef0f7;
-  line-height:1.7;
-}
-.container{
-  max-width:760px;
-  margin:auto;
-  padding:24px 18px 50px;
-}
-header{text-align:center;padding:35px 10px}
-.logo{
-  font-size:48px;
-  font-weight:bold;
-  background:linear-gradient(120deg,#36a8ff,#a45cff);
-  color:transparent;
-  background-clip:text;
-}
-h1{margin:5px 0;font-size:30px}
-.subtitle{color:#aab2ca}
-.card{
-  background:#151826;
-  border:1px solid #292f45;
-  border-radius:16px;
-  padding:20px;
-  margin:18px 0;
-}
-h2{font-size:20px;color:#8fc8ff;margin-top:0}
-p,li{color:#c4cadd}
-li{margin:8px 0}
-.notice{
-  background:#292315;
-  border:1px solid #75602d;
-  border-radius:12px;
-  padding:14px;
-  color:#ffe4a0;
-}
-.download{
-  display:block;
-  text-align:center;
-  padding:14px;
-  margin-top:15px;
-  background:#34394b;
-  color:#c4cadd;
-  border-radius:10px;
-  text-decoration:none;
-  font-weight:bold;
-}
-footer{text-align:center;color:#858da5;margin-top:35px}
-a{color:#83bdff}
-.small{font-size:13px;color:#929bb2}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.7 system-ui,-apple-system,"Noto Sans Bengali",Segoe UI,sans-serif}
+.wrap{max-width:760px;margin:0 auto;padding:24px 16px 60px}
+.hero{text-align:center;padding:20px 0 6px}
+.orb{width:84px;height:84px;border-radius:50%;margin:0 auto 14px;background:radial-gradient(circle at 35% 30%,#7df9ff,#22d3ee 35%,#4c3bd6 75%,#120a3a);box-shadow:0 0 40px #22d3ee66}
+h1{font-size:30px;margin:6px 0}
+h2{font-size:19px;margin:0 0 8px;color:var(--acc)}
+.mute{color:var(--mute);font-size:14px}
+.btn{display:block;text-align:center;margin:18px auto 4px;max-width:360px;padding:16px;border-radius:16px;background:linear-gradient(90deg,var(--acc),var(--acc2));color:#fff;font-weight:700;font-size:18px;text-decoration:none}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px 18px;margin-top:16px}
+.warn{border-color:var(--warn)}
+.warn h2{color:var(--warn)}
+ol,ul{padding-left:20px;margin:6px 0}
+a{color:var(--acc)}
+.tabs{display:flex;gap:8px;margin:14px 0}
+.tabs button{flex:1;padding:10px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--text);font:inherit;cursor:pointer}
+.tabs button.on{border-color:var(--acc);color:var(--acc);font-weight:600}
+.lang{display:none}.lang.on{display:block}
+footer{text-align:center;margin-top:26px}
 </style>
 </head>
-
 <body>
-<div class="container">
+<div class="wrap">
+<div class="hero">
+<div class="orb"></div>
+<h1>Nova AI</h1>
+<p class="mute" id="tag">আপনার বাংলা ভয়েস সহকারী · Beta</p>
+</div>
 
-<header>
-  <div class="logo">N</div>
-  <h1>Nova AI</h1>
-  <p class="subtitle">Your Smart AI Assistant</p>
-  <p>Intelligent Chat | AI Voice | Smart Assistance</p>
-  <p class="small">Currently in Development. Coming Soon!</p>
-</header>
+<a class="btn" id="dl" href="https://github.com/JUBAYED062/nova-admin-panel/releases/latest/download/nova-ai.apk">⬇ Download APK</a>
+<p class="mute" style="text-align:center">Android 9 (API 28) বা তার উপরে · Android 9+ required</p>
 
-<div class="card">
-  <h2>Download Nova AI</h2>
-  <p>
-    The official Nova AI Android application will be
-    available here when the release is ready.
-  </p>
+<div class="tabs">
+<button id="tbn" class="on" onclick="setLang('bn')">বাংলা</button>
+<button id="ten" onclick="setLang('en')">English</button>
+</div>
 
-  <div class="notice">
-    <strong>Coming Soon!</strong><br>
-    The official APK download link is not available yet.
-    Please check again later.
-  </div>
-
-  <a class="download" href="#" aria-disabled="true">
-    Download APK – Coming Soon
-  </a>
+<div class="lang on" id="bn">
+<div class="card warn">
+<h2>⚠ বিটা সংস্করণ</h2>
+<p>Nova AI এখনো বিটা। ফোন নিয়ন্ত্রণের কাজ (অ্যাপ চালানো, মেসেজ পাঠানো) স্ক্রিন পড়ে করা হয়, তাই মাঝে মাঝে ভুল বা দেরি হতে পারে। গুরুত্বপূর্ণ মেসেজ পাঠানোর পর একবার চেক করে নিন। কোনো সমস্যা পেলে নিচের ঠিকানায় জানান।</p>
 </div>
 
 <div class="card">
-  <h2>How to Install</h2>
-  <ol>
-    <li>Download the official Nova AI APK from this page.</li>
-    <li>Open the downloaded APK file.</li>
-    <li>If Android asks, allow installation from this trusted source.</li>
-    <li>Review the requested permissions before allowing them.</li>
-    <li>Complete installation and open Nova AI.</li>
-  </ol>
-  <p class="small">
-    Only install APK files obtained from the official Nova AI
-    download page. Android settings may vary by device.
-  </p>
+<h2>ইনস্টলের ধাপ</h2>
+<ol>
+<li>উপরের <b>Download APK</b> চাপুন এবং ফাইলটি নামান।</li>
+<li>ফাইলটি খুলুন। ফোন "অজানা উৎস থেকে ইনস্টল" অনুমতি চাইলে <b>Settings</b> খুলে এই ব্রাউজারের জন্য অনুমতি দিন, তারপর ফিরে এসে <b>Install</b> চাপুন।</li>
+<li>অ্যাপ খুলে Gmail বা ইমেইল দিয়ে লগইন করুন।</li>
+<li><b>Settings → Connections</b>-এ আপনার নিজের Gemini API key দিন (ফ্রি key: Google AI Studio থেকে)।</li>
+<li>মাইক্রোফোনের অনুমতি দিন।</li>
+</ol>
 </div>
 
 <div class="card">
-  <h2>Accessibility Permission</h2>
-  <p>
-    Nova AI uses Android Accessibility features to help perform
-    certain tasks on your device, such as interacting with
-    supported apps and reading on-screen information.
-  </p>
-  <div class="notice">
-    <strong>Important Privacy Notice</strong><br>
-    Accessibility access can allow an app to view on-screen
-    content and interact with the screen. Only enable it if
-    you understand and agree to this access.
-  </div>
-  <p>
-    Nova AI may sometimes misunderstand screen content or
-    perform an action incorrectly. Always review important
-    actions and results yourself.
-  </p>
-  <p>
-    You can turn off Accessibility access at any time from
-    your Android device's Accessibility settings.
-  </p>
+<h2>ফোন নিয়ন্ত্রণ চালু করতে (ঐচ্ছিক)</h2>
+<ol>
+<li>ফোনের <b>Settings → Accessibility → Installed apps (বা Downloaded apps) → Nova</b> খুলুন।</li>
+<li>চালু করুন এবং ফোন যা বলবে সেই সতর্কতায় <b>Allow</b> দিন। কিছু ফোনে "Restricted setting" দেখালে: অ্যাপের তথ্য পাতার ওপরে-ডানের ⋮ চেপে <b>Allow restricted settings</b> দিন।</li>
+<li>নোটিফিকেশন পড়ে শোনাতে চাইলে <b>Notification access</b>-এও Nova চালু করুন।</li>
+</ol>
+<p class="mute">Accessibility দিয়ে Nova শুধু আপনি কাজ দিলে স্ক্রিন পড়ে ও ট্যাপ করে। পাসওয়ার্ড ঘর পড়া হয় না। বিস্তারিত গোপনীয়তা নীতিতে।</p>
 </div>
 
 <div class="card">
-  <h2>Notification Permission</h2>
-  <p>
-    If Nova AI requests notification access, review the
-    explanation shown by Android before granting it.
-  </p>
-  <p>
-    Notification access may expose notification content,
-    including private messages and alerts. Enable it only
-    when needed and when you understand the access.
-  </p>
-  <p>
-    You can manage or revoke this permission in Android
-    settings.
-  </p>
+<h2>নিরাপত্তা</h2>
+<ul>
+<li>APK শুধু এই পাতা থেকে নামান। অন্য কারও কাছ থেকে পাওয়া ফাইল ইনস্টল করবেন না।</li>
+<li>আপনার API key শুধু আপনার ফোনে এনক্রিপ্ট করে থাকে।</li>
+</ul>
+</div>
+</div>
+
+<div class="lang" id="en">
+<div class="card warn">
+<h2>⚠ Beta version</h2>
+<p>Nova AI is still in beta. Phone-control tasks (opening apps, sending messages) work by reading the screen, so sometimes they may be slow or wrong. Check important messages after sending. If you find a problem, tell us using the contact below.</p>
 </div>
 
 <div class="card">
-  <h2>Important Information</h2>
-  <ul>
-    <li>Nova AI is currently under development.</li>
-    <li>Some features may not work perfectly on every device.</li>
-    <li>AI-generated responses and automated actions can be incorrect.</li>
-    <li>Always check before sending messages or performing important actions.</li>
-    <li>Never share passwords, OTPs, or sensitive information with an AI assistant.</li>
-  </ul>
+<h2>Install steps</h2>
+<ol>
+<li>Tap <b>Download APK</b> above and download the file.</li>
+<li>Open the file. If the phone asks for "install unknown apps" permission, open <b>Settings</b>, allow it for this browser, come back and tap <b>Install</b>.</li>
+<li>Open the app and sign in with Google or email.</li>
+<li>Go to <b>Settings → Connections</b> and add your own Gemini API key (a free key from Google AI Studio).</li>
+<li>Allow the microphone permission.</li>
+</ol>
 </div>
 
 <div class="card">
-  <h2>Privacy Policy</h2>
-  <p>
-    Please read our Privacy Policy to understand how information
-    and permissions are handled.
-  </p>
-  <a href="privacy.html">Read Privacy Policy →</a>
+<h2>Turn on phone control (optional)</h2>
+<ol>
+<li>Open phone <b>Settings → Accessibility → Installed apps (or Downloaded apps) → Nova</b>.</li>
+<li>Turn it on and tap <b>Allow</b> on the warning. If the phone shows "Restricted setting": open the app info page, tap ⋮ at the top right, then <b>Allow restricted settings</b>.</li>
+<li>To let Nova read notifications aloud, also turn Nova on in <b>Notification access</b>.</li>
+</ol>
+<p class="mute">With Accessibility, Nova reads the screen and taps only when you give it a task. Password fields are not read. See the privacy policy for details.</p>
 </div>
 
-<footer>
-  <p>© 2026 Nova AI. All rights reserved.</p>
-  <p class="small">Official Nova AI Project</p>
-</footer>
-
+<div class="card">
+<h2>Safety</h2>
+<ul>
+<li>Download the APK only from this page. Do not install files from anyone else.</li>
+<li>Your API key stays encrypted on your phone only.</li>
+</ul>
 </div>
+</div>
+
+<div class="card">
+<h2 id="ch">যোগাযোগ · Contact</h2>
+<p>Email: <a href="mailto:jubayedking062@gmail.com">jubayedking062@gmail.com</a><br>
+Telegram: <a href="https://t.me/jubayed_j1">@jubayed_j1</a><br>
+Facebook: <a href="https://www.facebook.com/share/1CMgYHfSjP/">Nova AI</a> · Instagram: <a href="https://www.instagram.com/novaai.official062">@novaai.official062</a> · TikTok: <a href="https://www.tiktok.com/@novaai.official062">@novaai.official062</a></p>
+</div>
+
+<footer class="mute"><a href="privacy.html">Privacy Policy · গোপনীয়তা নীতি</a></footer>
+</div>
+<script>
+function setLang(l){
+  document.getElementById('bn').classList.toggle('on',l==='bn');
+  document.getElementById('en').classList.toggle('on',l==='en');
+  document.getElementById('tbn').classList.toggle('on',l==='bn');
+  document.getElementById('ten').classList.toggle('on',l==='en');
+  document.documentElement.lang=l;
+}
+</script>
 </body>
 </html>
