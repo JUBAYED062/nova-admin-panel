@@ -4,134 +4,227 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Nova AI – Download</title>
+<meta name="description" content="Nova AI – বাংলা ভয়েস সহকারী। Android APK ডাউনলোড।">
 <style>
-:root{--bg:#0b1220;--card:#141d33;--text:#e8edf7;--mute:#9fb0cf;--acc:#22d3ee;--acc2:#7c5cff;--line:#26324f;--warn:#fbbf24}
-@media (prefers-color-scheme:light){:root{--bg:#f4f7fc;--card:#fff;--text:#142036;--mute:#53627f;--acc:#0a7ea4;--acc2:#5b3fd6;--line:#dbe3f1;--warn:#b45309}}
-*{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--text);font:16px/1.7 system-ui,-apple-system,"Noto Sans Bengali",Segoe UI,sans-serif}
-.wrap{max-width:760px;margin:0 auto;padding:24px 16px 60px}
-.hero{text-align:center;padding:20px 0 6px}
-.orb{width:84px;height:84px;border-radius:50%;margin:0 auto 14px;background:radial-gradient(circle at 35% 30%,#7df9ff,#22d3ee 35%,#4c3bd6 75%,#120a3a);box-shadow:0 0 40px #22d3ee66}
-h1{font-size:30px;margin:6px 0}
-h2{font-size:19px;margin:0 0 8px;color:var(--acc)}
-.mute{color:var(--mute);font-size:14px}
-.btn{display:block;text-align:center;margin:18px auto 4px;max-width:360px;padding:16px;border-radius:16px;background:linear-gradient(90deg,var(--acc),var(--acc2));color:#fff;font-weight:700;font-size:18px;text-decoration:none}
-.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px 18px;margin-top:16px}
-.warn{border-color:var(--warn)}
+:root{--bg:#050816;--bg2:#0a1030;--card:rgba(255,255,255,.055);--card2:rgba(255,255,255,.09);--text:#eef3ff;--mute:#9aa8cc;--acc:#35e0ff;--acc2:#8b5cff;--acc3:#ff5cc8;--line:rgba(255,255,255,.12);--warn:#ffc857}
+@media (prefers-color-scheme:light){:root{--bg:#f3f6ff;--bg2:#e6ecff;--card:rgba(255,255,255,.75);--card2:#fff;--text:#0d1630;--mute:#55638a;--acc:#0b86b3;--acc2:#6a45e8;--acc3:#d6338f;--line:rgba(20,30,70,.12);--warn:#a8650a}}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{scroll-behavior:smooth}
+body{margin:0;color:var(--text);font:16px/1.75 system-ui,-apple-system,"Noto Sans Bengali","Hind Siliguri",Segoe UI,Roboto,sans-serif;background:var(--bg);overflow-x:hidden;min-height:100vh}
+body:before{content:"";position:fixed;inset:0;z-index:-2;background:radial-gradient(60% 45% at 15% 0%,rgba(139,92,255,.35),transparent 70%),radial-gradient(55% 40% at 100% 10%,rgba(53,224,255,.28),transparent 70%),radial-gradient(60% 50% at 50% 100%,rgba(255,92,200,.16),transparent 70%),linear-gradient(180deg,var(--bg),var(--bg2))}
+.wrap{max-width:820px;margin:0 auto;padding:22px 18px 70px}
+a{color:var(--acc);text-decoration:none}
+.grad{background:linear-gradient(90deg,var(--acc),var(--acc2) 55%,var(--acc3));-webkit-background-clip:text;background-clip:text;color:transparent}
+.glass{background:var(--card);border:1px solid var(--line);border-radius:22px;backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);box-shadow:0 10px 40px rgba(0,0,0,.18)}
+.mute{color:var(--mute)}
+.nav{display:flex;align-items:center;justify-content:space-between;padding:6px 2px 18px}
+.brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:19px;letter-spacing:.3px;color:var(--text)}
+.dot{width:26px;height:26px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#d8fbff,#35e0ff 35%,#6a45e8 75%,#150a45);box-shadow:0 0 18px rgba(53,224,255,.7)}
+.seg{display:inline-flex;background:var(--card);border:1px solid var(--line);border-radius:999px;padding:3px}
+.seg button{border:0;background:transparent;color:var(--mute);padding:7px 16px;border-radius:999px;font:inherit;font-size:14px;cursor:pointer}
+.seg button.on{background:linear-gradient(90deg,var(--acc),var(--acc2));color:#fff;font-weight:700}
+.lang{display:none}.lang.on{display:block;animation:in .35s ease}
+@keyframes in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+h2{font-size:20px;margin:0 0 8px}
+footer{text-align:center;margin-top:34px;font-size:14px;color:var(--mute)}
+footer a{margin:0 8px}
+
+.hero{text-align:center;padding:26px 6px 6px}
+.orb{position:relative;width:132px;height:132px;margin:0 auto 18px;border-radius:50%;background:radial-gradient(circle at 34% 28%,#e5fdff 0,#35e0ff 28%,#6a45e8 66%,#0d0630 100%);box-shadow:0 0 70px rgba(53,224,255,.55),0 0 140px rgba(139,92,255,.4);animation:float 5s ease-in-out infinite}
+.orb:before,.orb:after{content:"";position:absolute;inset:-14px;border-radius:50%;border:1.5px solid rgba(53,224,255,.45);animation:ring 3.2s ease-out infinite}
+.orb:after{animation-delay:1.6s}
+@keyframes ring{0%{transform:scale(.88);opacity:.9}100%{transform:scale(1.35);opacity:0}}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+h1{font-size:44px;line-height:1.1;margin:6px 0 8px;font-weight:800;letter-spacing:-.5px}
+.pill{display:inline-block;padding:5px 14px;border-radius:999px;font-size:13px;font-weight:700;background:rgba(255,200,87,.14);color:var(--warn);border:1px solid rgba(255,200,87,.4)}
+.sub{font-size:18px;max-width:560px;margin:12px auto 0}
+.cta{display:block;max-width:380px;margin:26px auto 6px;padding:18px;border-radius:18px;text-align:center;font-weight:800;font-size:19px;color:#fff;background:linear-gradient(90deg,var(--acc),var(--acc2) 60%,var(--acc3));box-shadow:0 14px 40px rgba(139,92,255,.45);transition:transform .15s}
+.cta:active{transform:scale(.97)}
+.meta{text-align:center;font-size:13px}
+.feat{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin:30px 0 6px}
+.feat div{padding:16px}
+.feat b{display:block;margin:4px 0 2px;font-size:15px}
+.feat span{font-size:13.5px;color:var(--mute);line-height:1.5}
+.feat i{font-style:normal;font-size:24px}
+.card{padding:20px;margin-top:16px}
+.warn{border-color:rgba(255,200,87,.5);background:linear-gradient(180deg,rgba(255,200,87,.1),var(--card))}
 .warn h2{color:var(--warn)}
-ol,ul{padding-left:20px;margin:6px 0}
-a{color:var(--acc)}
-.tabs{display:flex;gap:8px;margin:14px 0}
-.tabs button{flex:1;padding:10px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--text);font:inherit;cursor:pointer}
-.tabs button.on{border-color:var(--acc);color:var(--acc);font-weight:600}
-.lang{display:none}.lang.on{display:block}
-footer{text-align:center;margin-top:26px}
+.steps{list-style:none;counter-reset:s;padding:0;margin:8px 0 0}
+.steps li{counter-increment:s;position:relative;padding:4px 0 14px 48px}
+.steps li:before{content:counter(s);position:absolute;left:0;top:2px;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font-weight:800;color:#fff;background:linear-gradient(135deg,var(--acc),var(--acc2))}
+.steps li:after{content:"";position:absolute;left:16px;top:38px;bottom:2px;width:2px;background:var(--line)}
+.steps li:last-child:after{display:none}
+details{border-top:1px solid var(--line);padding:12px 0}
+details:first-of-type{border-top:0}
+summary{cursor:pointer;font-weight:700;list-style:none}
+summary::-webkit-details-marker{display:none}
+summary:after{content:"+";float:right;color:var(--acc);font-size:20px;line-height:1}
+details[open] summary:after{content:"–"}
+details p{margin:8px 0 0}
+.links{display:flex;flex-wrap:wrap;gap:10px;margin-top:10px}
+.links a{padding:9px 16px;border-radius:999px;background:var(--card2);border:1px solid var(--line);font-size:14px;color:var(--text)}
+.sticky{position:fixed;left:0;right:0;bottom:0;padding:10px 16px calc(10px + env(safe-area-inset-bottom));background:linear-gradient(0deg,var(--bg) 40%,transparent);display:none;z-index:5}
+.sticky a{display:block;max-width:420px;margin:0 auto;padding:14px;border-radius:16px;text-align:center;font-weight:800;color:#fff;background:linear-gradient(90deg,var(--acc),var(--acc2))}
+@media(max-width:520px){h1{font-size:36px}.sticky{display:block}.wrap{padding-bottom:100px}}
 </style>
 </head>
 <body>
 <div class="wrap">
-<div class="hero">
-<div class="orb"></div>
-<h1>Nova AI</h1>
-<p class="mute" id="tag">আপনার বাংলা ভয়েস সহকারী · Beta</p>
+<div class="nav">
+<div class="brand"><span class="dot"></span>Nova AI</div>
+<div class="seg"><button id="tbn" class="on" onclick="setLang('bn')">বাংলা</button><button id="ten" onclick="setLang('en')">EN</button></div>
 </div>
 
-<a class="btn" id="dl" href="https://github.com/JUBAYED062/nova-admin-panel/releases/latest/download/nova-ai.apk">⬇ Download APK</a>
-<p class="mute" style="text-align:center">Android 9 (API 28) বা তার উপরে · Android 9+ required</p>
+<div class="hero">
+<div class="orb"></div>
+<span class="pill">BETA</span>
+<h1><span class="grad">Nova AI</span></h1>
+<p class="sub mute" id="sub">আপনার নিজের বাংলা ভয়েস সহকারী। কথা বলুন, Nova আপনার ফোন চালাবে।</p>
+<a class="cta" id="dl" href="https://github.com/JUBAYED062/nova-admin-panel/releases/latest/download/nova-ai.apk">⬇ &nbsp;Download APK</a>
+<div class="meta mute">Android 9+ · Free · Made in Bangladesh 🇧🇩</div>
+</div>
 
-<div class="tabs">
-<button id="tbn" class="on" onclick="setLang('bn')">বাংলা</button>
-<button id="ten" onclick="setLang('en')">English</button>
+<div class="feat">
+<div class="glass"><i>🎙</i><b id="f1t">লাইভ ভয়েস</b><span id="f1d">সরাসরি বাংলায় কথোপকথন</span></div>
+<div class="glass"><i>📱</i><b id="f2t">ফোন নিয়ন্ত্রণ</b><span id="f2d">অ্যাপ খোলা, মেসেজ, কল</span></div>
+<div class="glass"><i>🔔</i><b id="f3t">নোটিফিকেশন</b><span id="f3d">পড়ে শোনায়, উত্তরও দেয়</span></div>
+<div class="glass"><i>📔</i><b id="f4t">ডায়েরি ও মুড</b><span id="f4d">আপনার দিনের সঙ্গী</span></div>
 </div>
 
 <div class="lang on" id="bn">
-<div class="card warn">
+<div class="glass card warn">
 <h2>⚠ বিটা সংস্করণ</h2>
-<p>Nova AI এখনো বিটা। ফোন নিয়ন্ত্রণের কাজ (অ্যাপ চালানো, মেসেজ পাঠানো) স্ক্রিন পড়ে করা হয়, তাই মাঝে মাঝে ভুল বা দেরি হতে পারে। গুরুত্বপূর্ণ মেসেজ পাঠানোর পর একবার চেক করে নিন। কোনো সমস্যা পেলে নিচের ঠিকানায় জানান।</p>
+<p>Nova AI এখনো বিটা। ফোন নিয়ন্ত্রণের কাজ স্ক্রিন পড়ে করা হয়, তাই মাঝে মাঝে ভুল বা দেরি হতে পারে। গুরুত্বপূর্ণ মেসেজ পাঠানোর পর একবার চেক করে নিন। সমস্যা পেলে নিচের ঠিকানায় জানান।</p>
 </div>
 
-<div class="card">
-<h2>ইনস্টলের ধাপ</h2>
-<ol>
-<li>উপরের <b>Download APK</b> চাপুন এবং ফাইলটি নামান।</li>
-<li>ফাইলটি খুলুন। ফোন "অজানা উৎস থেকে ইনস্টল" অনুমতি চাইলে <b>Settings</b> খুলে এই ব্রাউজারের জন্য অনুমতি দিন, তারপর ফিরে এসে <b>Install</b> চাপুন।</li>
-<li>অ্যাপ খুলে Gmail বা ইমেইল দিয়ে লগইন করুন।</li>
-<li><b>Settings → Connections</b>-এ আপনার নিজের Gemini API key দিন (ফ্রি key: Google AI Studio থেকে)।</li>
-<li>মাইক্রোফোনের অনুমতি দিন।</li>
+<div class="glass card">
+<h2>ইনস্টল করবেন যেভাবে</h2>
+<ol class="steps">
+<li><b>ডাউনলোড করুন।</b> উপরের <i>Download APK</i> চাপুন।</li>
+<li><b>ইনস্টল করুন।</b> ফাইলটি খুলুন। ফোন "অজানা উৎস" অনুমতি চাইলে <i>Settings</i>-এ ব্রাউজারের জন্য অনুমতি দিয়ে ফিরে এসে <i>Install</i> চাপুন।</li>
+<li><b>লগইন।</b> অ্যাপ খুলে Google বা ইমেইল দিয়ে ঢুকুন।</li>
+<li><b>API key দিন।</b> <i>Settings → Connections</i>-এ আপনার নিজের Gemini key বসান (Google AI Studio থেকে ফ্রি)।</li>
+<li><b>মাইক্রোফোন।</b> অনুমতি দিন, তারপর Orb চেপে কথা বলুন।</li>
 </ol>
 </div>
 
-<div class="card">
-<h2>ফোন নিয়ন্ত্রণ চালু করতে (ঐচ্ছিক)</h2>
-<ol>
-<li>ফোনের <b>Settings → Accessibility → Installed apps (বা Downloaded apps) → Nova</b> খুলুন।</li>
-<li>চালু করুন এবং ফোন যা বলবে সেই সতর্কতায় <b>Allow</b> দিন। কিছু ফোনে "Restricted setting" দেখালে: অ্যাপের তথ্য পাতার ওপরে-ডানের ⋮ চেপে <b>Allow restricted settings</b> দিন।</li>
-<li>নোটিফিকেশন পড়ে শোনাতে চাইলে <b>Notification access</b>-এও Nova চালু করুন।</li>
+<div class="glass card">
+<h2>ইনস্টল না হলে</h2>
+<p>ডাউনলোডের পর <b>ইনস্টল চাপার আগে</b> WiFi / Data বন্ধ করুন, তারপর ইনস্টল করুন। তবুও না হলে:</p>
+<ol class="steps">
+<li>ইন্টারনেট আবার চালু করুন।</li>
+<li><b>Play Store</b> খুলে আপনার প্রোফাইলে চাপ দিন।</li>
+<li>নিচে <b>Play Protect</b> চাপুন।</li>
+<li>উপরে <b>Settings</b> আইকনে চাপুন।</li>
+<li>সেখানকার ২টা সুইচই <b>OFF</b> করুন।</li>
+<li>আবার ইনস্টল করুন। এরপরও না হলে ডেভেলপারকে Email বা Telegram-এ জানান।</li>
 </ol>
-<p class="mute">Accessibility দিয়ে Nova শুধু আপনি কাজ দিলে স্ক্রিন পড়ে ও ট্যাপ করে। পাসওয়ার্ড ঘর পড়া হয় না। বিস্তারিত গোপনীয়তা নীতিতে।</p>
 </div>
 
-<div class="card">
-<h2>নিরাপত্তা</h2>
-<ul>
-<li>APK শুধু এই পাতা থেকে নামান। অন্য কারও কাছ থেকে পাওয়া ফাইল ইনস্টল করবেন না।</li>
-<li>আপনার API key শুধু আপনার ফোনে এনক্রিপ্ট করে থাকে।</li>
-</ul>
+<div class="glass card">
+<h2>নোটিফিকেশন পড়া নিয়ে নোট</h2>
+<p>কিছু ফোনে (বিশেষ করে Android 16) ব্যাকগ্রাউন্ড থেকে লাইভ ভয়েস জেগে উঠতে পারে না। সেখানে ফোনের নিজের ভয়েস (TTS) নোটিফিকেশন পড়ে শোনাবে, তবে উত্তর দেওয়া যাবে না।</p>
+<p>যেসব ফোনে লাইভ কাজ করে, সেখানে আগের মতোই নোটিফিকেশন এলে Nova জেগে উঠে কথা বলবে এবং আপনি উত্তরও দিতে পারবেন।</p>
+</div>
+
+<div class="glass card">
+<h2>ফোন নিয়ন্ত্রণ চালু করা (ঐচ্ছিক)</h2>
+<ol class="steps">
+<li>ফোনের <i>Settings → Accessibility → Installed apps</i> (বা Downloaded apps) → <b>Nova</b> খুলুন।</li>
+<li>চালু করে সতর্কতায় <b>Allow</b> দিন। "Restricted setting" দেখালে: অ্যাপ তথ্য পাতার ⋮ → <b>Allow restricted settings</b>।</li>
+<li>নোটিফিকেশন পড়ে শোনাতে <i>Notification access</i>-এও Nova চালু করুন।</li>
+</ol>
+<p class="mute" style="font-size:14px">Accessibility দিয়ে Nova শুধু আপনি কাজ দিলে স্ক্রিন পড়ে ও ট্যাপ করে। পাসওয়ার্ড ঘর পড়া হয় না।</p>
+</div>
+
+<div class="glass card">
+<h2>প্রশ্নোত্তর</h2>
+<details><summary>Xiaomi / Redmi ফোনে নোটিফিকেশন পড়ে না?</summary><p>Settings → Apps → Nova → <i>Autostart</i> চালু করুন, <i>Battery saver</i> → <i>No restrictions</i> দিন, আর Recents-এ Nova কার্ড লক করুন। এরপর Notification access বন্ধ করে আবার চালু করুন।</p></details>
+<details><summary>API key কেন লাগে?</summary><p>Nova আপনার নিজের key দিয়ে AI ব্যবহার করে, তাই আপনার কথা ও খরচ আপনার নিয়ন্ত্রণে। key শুধু আপনার ফোনে এনক্রিপ্ট থাকে।</p></details>
+<details><summary>আমার তথ্য কোথায় যায়?</summary><p>বিস্তারিত <a href="privacy.html">গোপনীয়তা নীতিতে</a> আছে। চ্যাট ও key কখনো ডেভেলপার দেখতে পান না।</p></details>
+<details><summary>আপডেট কীভাবে পাব?</summary><p>নতুন ভার্সন এলে এই পাতা থেকে আবার ডাউনলোড করে আগের অ্যাপের ওপর ইনস্টল করুন। আপনার তথ্য থাকবে।</p></details>
 </div>
 </div>
 
 <div class="lang" id="en">
-<div class="card warn">
+<div class="glass card warn">
 <h2>⚠ Beta version</h2>
-<p>Nova AI is still in beta. Phone-control tasks (opening apps, sending messages) work by reading the screen, so sometimes they may be slow or wrong. Check important messages after sending. If you find a problem, tell us using the contact below.</p>
+<p>Nova AI is still in beta. Phone-control tasks work by reading the screen, so they may sometimes be slow or wrong. Check important messages after sending, and tell us about any problem using the contact below.</p>
 </div>
 
-<div class="card">
-<h2>Install steps</h2>
-<ol>
-<li>Tap <b>Download APK</b> above and download the file.</li>
-<li>Open the file. If the phone asks for "install unknown apps" permission, open <b>Settings</b>, allow it for this browser, come back and tap <b>Install</b>.</li>
-<li>Open the app and sign in with Google or email.</li>
-<li>Go to <b>Settings → Connections</b> and add your own Gemini API key (a free key from Google AI Studio).</li>
-<li>Allow the microphone permission.</li>
+<div class="glass card">
+<h2>How to install</h2>
+<ol class="steps">
+<li><b>Download.</b> Tap <i>Download APK</i> above.</li>
+<li><b>Install.</b> Open the file. If the phone asks for "unknown apps" permission, allow it for your browser in <i>Settings</i>, come back and tap <i>Install</i>.</li>
+<li><b>Sign in.</b> Open the app and sign in with Google or email.</li>
+<li><b>Add your key.</b> In <i>Settings → Connections</i> add your own Gemini API key (free from Google AI Studio).</li>
+<li><b>Microphone.</b> Allow it, then tap the Orb and talk.</li>
 </ol>
 </div>
 
-<div class="card">
+<div class="glass card">
+<h2>If it will not install</h2>
+<p>After downloading, turn <b>WiFi / mobile data OFF before tapping Install</b>, then install. If it still fails:</p>
+<ol class="steps">
+<li>Turn the internet back on.</li>
+<li>Open the <b>Play Store</b> and tap your profile.</li>
+<li>Tap <b>Play Protect</b>.</li>
+<li>Tap the <b>Settings</b> icon at the top.</li>
+<li>Turn both switches <b>OFF</b>.</li>
+<li>Try installing again. Still stuck? Message the developer by email or Telegram.</li>
+</ol>
+</div>
+
+<div class="glass card">
+<h2>Note on reading notifications</h2>
+<p>On some phones (notably Android 16) the live voice cannot wake up from the background. There, the phone's own voice (TTS) reads the notification aloud, but you cannot reply.</p>
+<p>On phones where live works, Nova wakes up as before, speaks, and you can reply.</p>
+</div>
+
+<div class="glass card">
 <h2>Turn on phone control (optional)</h2>
-<ol>
-<li>Open phone <b>Settings → Accessibility → Installed apps (or Downloaded apps) → Nova</b>.</li>
-<li>Turn it on and tap <b>Allow</b> on the warning. If the phone shows "Restricted setting": open the app info page, tap ⋮ at the top right, then <b>Allow restricted settings</b>.</li>
-<li>To let Nova read notifications aloud, also turn Nova on in <b>Notification access</b>.</li>
+<ol class="steps">
+<li>Open <i>Settings → Accessibility → Installed apps</i> (or Downloaded apps) → <b>Nova</b>.</li>
+<li>Turn it on and tap <b>Allow</b>. If you see "Restricted setting": app info page ⋮ → <b>Allow restricted settings</b>.</li>
+<li>To let Nova read notifications aloud, also turn Nova on in <i>Notification access</i>.</li>
 </ol>
-<p class="mute">With Accessibility, Nova reads the screen and taps only when you give it a task. Password fields are not read. See the privacy policy for details.</p>
+<p class="mute" style="font-size:14px">With Accessibility, Nova reads the screen and taps only when you give it a task. Password fields are not read.</p>
 </div>
 
-<div class="card">
-<h2>Safety</h2>
-<ul>
-<li>Download the APK only from this page. Do not install files from anyone else.</li>
-<li>Your API key stays encrypted on your phone only.</li>
-</ul>
+<div class="glass card">
+<h2>FAQ</h2>
+<details><summary>Notifications are not read on Xiaomi / Redmi?</summary><p>Settings → Apps → Nova → turn on <i>Autostart</i>, set <i>Battery saver</i> to <i>No restrictions</i>, and lock the Nova card in Recents. Then turn Notification access off and on again.</p></details>
+<details><summary>Why do I need an API key?</summary><p>Nova uses your own key for AI, so your usage and cost stay under your control. The key stays encrypted on your phone only.</p></details>
+<details><summary>Where does my data go?</summary><p>See the <a href="privacy.html">privacy policy</a>. The developer never sees your chats or keys.</p></details>
+<details><summary>How do I update?</summary><p>When a new version is out, download it from this page and install it over the old app. Your data stays.</p></details>
 </div>
 </div>
 
-<div class="card">
-<h2 id="ch">যোগাযোগ · Contact</h2>
-<p>Email: <a href="mailto:jubayedking062@gmail.com">jubayedking062@gmail.com</a><br>
-Telegram: <a href="https://t.me/jubayed_j1">@jubayed_j1</a><br>
-Facebook: <a href="https://www.facebook.com/share/1CMgYHfSjP/">Nova AI</a> · Instagram: <a href="https://www.instagram.com/novaai.official062">@novaai.official062</a> · TikTok: <a href="https://www.tiktok.com/@novaai.official062">@novaai.official062</a></p>
+<div class="glass card">
+<h2>যোগাযোগ · Contact</h2>
+<div class="links">
+<a href="mailto:jubayedking062@gmail.com">✉ Email</a>
+<a href="https://t.me/jubayed_j1">✈ Telegram</a>
+<a href="https://www.facebook.com/share/1CMgYHfSjP/">Facebook</a>
+<a href="https://www.instagram.com/novaai.official062">Instagram</a>
+<a href="https://www.tiktok.com/@novaai.official062">TikTok</a>
+</div>
 </div>
 
-<footer class="mute"><a href="privacy.html">Privacy Policy · গোপনীয়তা নীতি</a></footer>
+<footer><a href="privacy.html">Privacy Policy · গোপনীয়তা নীতি</a><br><span>© Nova AI · Jubayed, Bangladesh</span></footer>
 </div>
+<div class="sticky"><a href="https://github.com/JUBAYED062/nova-admin-panel/releases/latest/download/nova-ai.apk">⬇ Download APK</a></div>
 <script>
+var T={bn:{sub:"আপনার নিজের বাংলা ভয়েস সহকারী। কথা বলুন, Nova আপনার ফোন চালাবে।",f1t:"লাইভ ভয়েস",f1d:"সরাসরি বাংলায় কথোপকথন",f2t:"ফোন নিয়ন্ত্রণ",f2d:"অ্যাপ খোলা, মেসেজ, কল",f3t:"নোটিফিকেশন",f3d:"পড়ে শোনায়, উত্তরও দেয়",f4t:"ডায়েরি ও মুড",f4d:"আপনার দিনের সঙ্গী"},
+en:{sub:"Your own Bangla voice assistant. Just talk, and Nova runs your phone.",f1t:"Live voice",f1d:"Talk naturally in Bangla",f2t:"Phone control",f2d:"Open apps, messages, calls",f3t:"Notifications",f3d:"Reads them aloud and can reply",f4t:"Diary & mood",f4d:"Your daily companion"}};
 function setLang(l){
   document.getElementById('bn').classList.toggle('on',l==='bn');
   document.getElementById('en').classList.toggle('on',l==='en');
   document.getElementById('tbn').classList.toggle('on',l==='bn');
   document.getElementById('ten').classList.toggle('on',l==='en');
   document.documentElement.lang=l;
+  for(var k in T[l]){var e=document.getElementById(k);if(e)e.textContent=T[l][k];}
 }
 </script>
 </body>
