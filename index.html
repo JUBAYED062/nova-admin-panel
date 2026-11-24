@@ -136,12 +136,29 @@ h2{font-size:16px;margin:0 0 6px}p.h{color:var(--mut);margin:0 0 6px;font-size:1
       <h2>Users</h2>
       <p class="h">Shows the 10 most recently active people first. Search, show more, or show everyone. Ban turns Nova off for that person; Unban turns it back on.</p>
       <div class="row">
-        <div style="flex:2"><label>Search (phone, country, version, id)</label><input id="usQ" placeholder="e.g. Redmi, BD, 9.4"></div>
+        <div style="flex:2"><label>Search (ID, Gmail, phone, country, version)</label><input id="usQ" placeholder="e.g. e6jat3v5, Redmi, BD, 9.4"></div>
         <div><label>Show</label><select id="usF"><option value="all">Everyone</option><option value="ban">Banned only</option></select></div>
       </div>
       <div id="usInfo" class="h" style="margin-top:10px"></div>
       <div id="usList"><small>Loading…</small></div>
       <div id="usBtns"></div>
+    </div>
+  </section>
+
+  <section id="t-pr" class="hide">
+    <div class="card">
+      <h2>Give or take Pro</h2>
+      <p class="h">Find the person by the ID shown in their app (Settings → Account) or by their Gmail. Pro ends by itself when the time is over.</p>
+      <div class="row">
+        <div style="flex:3"><label>ID or Gmail</label><input id="prQ" placeholder="e.g. e6jat3v5 or name@gmail.com" autocapitalize="off" autocomplete="off"></div>
+        <div><label>&nbsp;</label><button class="p" id="btnPrFind" style="margin:0;width:100%">Search</button></div>
+      </div>
+      <div id="prFound" style="margin-top:12px"></div>
+    </div>
+    <div class="card">
+      <h2>People with Pro now</h2>
+      <p class="h">Time left for each person. You can take Pro away before the time is over.</p>
+      <div id="prList"><small>Loading…</small></div>
     </div>
   </section>
 
@@ -181,13 +198,13 @@ function dtToMs(v){return v?new Date(v).getTime():0}
 function msToDt(ms){const n=Number(ms);if(!n)return"";const d=new Date(n);d.setMinutes(d.getMinutes()-d.getTimezoneOffset());return d.toISOString().slice(0,16)}
 
 // ---------- tabs ----------
-const tabs=[["dash","Dashboard"],["upd","Updates"],["mt","Maintenance"],["nt","Notices"],["ln","Download link"],["fb","Feedback"],["us","Users"],["lg","Activity"]];
+const tabs=[["dash","Dashboard"],["upd","Updates"],["mt","Maintenance"],["nt","Notices"],["ln","Download link"],["fb","Feedback"],["us","Users"],["pr","Premium"],["lg","Activity"]];
 const nav=$("nav");
 tabs.forEach(([k,n])=>{const b=el("button",n);b.dataset.k=k;b.onclick=()=>show(k);nav.appendChild(b)});
 function show(k){
   tabs.forEach(([x])=>$("t-"+x).classList.toggle("hide",x!==k));
   [...nav.children].forEach(b=>b.classList.toggle("on",b.dataset.k===k));
-  if(k==="dash")loadDash();if(k==="upd")loadVersions();if(k==="nt")loadNotices();if(k==="lg")loadLog();if(k==="fb")loadFeedback();if(k==="us")loadUsers();
+  if(k==="dash")loadDash();if(k==="upd")loadVersions();if(k==="nt")loadNotices();if(k==="lg")loadLog();if(k==="fb")loadFeedback();if(k==="us")loadUsers();if(k==="pr")loadPro();
 }
 
 // ---------- auth ----------
@@ -416,13 +433,15 @@ async function loadFeedback(){
 }
 
 // ---------- users (list, search, ban / unban) ----------
-let usRows=[],usBans={},usLimit=10;
+let usRows=[],usBans={},usLimit=10,usProf={},usPro={};
 $("usQ").oninput=()=>{usLimit=10;drawUsers()};
 $("usF").onchange=()=>{usLimit=10;drawUsers()};
 async function loadUsers(){
   const box=$("usList");box.replaceChildren(el("small","Loading…"));
   try{
-    const [us,bn]=await Promise.all([getDocs(query(collection(db,"usage"),orderBy("lastSeen","desc"),limit(2000))),getDocs(collection(db,"bans"))]);
+    const [us,bn,pf,pr]=await Promise.all([getDocs(query(collection(db,"usage"),orderBy("lastSeen","desc"),limit(2000))),getDocs(collection(db,"bans")),getDocs(collection(db,"profiles")),getDocs(collection(db,"pro"))]);
+    usProf={};pf.forEach(d=>{usProf[d.id]=d.data()});
+    usPro={};pr.forEach(d=>{usPro[d.id]=Number(d.data().until)||0});
     usRows=[];us.forEach(d=>usRows.push({id:d.id,...d.data()}));
     usBans={};bn.forEach(d=>{usBans[d.id]=d.data()});
     drawUsers();
@@ -434,7 +453,7 @@ function drawUsers(){
   let rows=usRows.filter(x=>{
     if(onlyBan&&!usBans[x.id])return false;
     if(!q)return true;
-    return [x.id,x.device,x.country,x.versionName,x.android,x.lang].join(" ").toLowerCase().includes(q);
+    const pf=usProf[x.id]||{};return [x.id,x.device,x.country,x.versionName,x.android,x.lang,pf.appId,pf.email].join(" ").toLowerCase().includes(q);
   });
   if(onlyBan){ // banned people who have no usage record still show up
     Object.keys(usBans).forEach(id=>{if(!usRows.some(u=>u.id===id)&&(!q||id.toLowerCase().includes(q)))rows.push({id,device:(usBans[id]&&usBans[id].device)||"unknown"})});
@@ -445,7 +464,11 @@ function drawUsers(){
   rows.slice(0,usLimit).forEach(x=>{
     const i=el("div",null,"item"),banned=!!usBans[x.id];
     const h=el("div");h.appendChild(el("b",(x.device||"Unknown phone")+" "));
-    if(banned)h.appendChild(el("span","banned","pill"));i.appendChild(h);
+    if(banned)h.appendChild(el("span","banned","pill"));
+    if((usPro[x.id]||0)>Date.now())h.appendChild(el("span","Pro · "+leftTxt(usPro[x.id]-Date.now()),"pill ok"));
+    i.appendChild(h);
+    const pf=usProf[x.id];
+    if(pf){const pl=el("div","ID: "+pf.appId+" · "+pf.email);pl.style.cssText="font-weight:600;user-select:all;word-break:break-all";i.appendChild(pl)}
     i.appendChild(el("small","Android "+(x.android||"?")+" · "+(x.country||"?")+" · "+(x.lang||"?")+" · Nova "+(x.versionName||"?")));
     i.appendChild(el("br"));
     i.appendChild(el("small","First seen "+fmt(x.firstSeen)+" · Last seen "+fmt(x.lastSeen)));
@@ -470,6 +493,110 @@ function drawUsers(){
   }else if(usLimit>10){
     const less=el("button","Show less","s");less.onclick=()=>{usLimit=10;drawUsers()};btns.appendChild(less);
   }
+}
+
+// ---------- premium (give / take Pro) ----------
+function leftTxt(ms){
+  const m=Math.max(0,Math.floor(ms/60000)),d=Math.floor(m/1440),h=Math.floor((m%1440)/60);
+  if(d>=2)return d+" days";if(d===1)return "1 day "+h+" h";if(h>=1)return h+" h "+(m%60)+" min";return m+" min";
+}
+async function findProfile(q){
+  q=q.trim().toLowerCase();if(!q)return null;
+  if(q.includes("@")){
+    const s=await getDocs(query(collection(db,"profiles"),where("email","==",q)));
+    let r=null;s.forEach(d=>{if(!r)r={uid:d.id,...d.data()}});return r;
+  }
+  const a=await getDoc(doc(db,"appIds",q));
+  if(!a.exists())return null;
+  const uid=a.data().uid,p=await getDoc(doc(db,"profiles",uid));
+  return p.exists()?{uid,...p.data()}:{uid,appId:q,email:"?"};
+}
+$("btnPrFind").onclick=async()=>{
+  const box=$("prFound");box.replaceChildren(el("small","Searching…"));
+  try{
+    const p=await findProfile($("prQ").value);
+    if(!p){box.replaceChildren(el("small","No one found. Check the ID or Gmail (the person must have opened the new version once)."));return}
+    drawFound(p);
+  }catch(e){box.replaceChildren(el("small","Could not search: "+(e.code||e.message)))}
+};
+$("prQ").onkeydown=e=>{if(e.key==="Enter")$("btnPrFind").click()};
+async function drawFound(p){
+  const box=$("prFound");box.replaceChildren();
+  const pd=await getDoc(doc(db,"pro",p.uid)),td=await getDoc(doc(db,"trial",p.uid));
+  const until=pd.exists()?Number(pd.data().until)||0:0,active=until>Date.now();
+  const c=el("div",null,"item");
+  c.appendChild(el("b",p.email));c.appendChild(el("br"));
+  const idl=el("span","ID: "+p.appId);idl.style.cssText="user-select:all;font-weight:600";c.appendChild(idl);c.appendChild(el("br"));
+  c.appendChild(el("small",active?"Pro now · "+leftTxt(until-Date.now())+" left · ends "+fmt(until):"No Pro right now"));
+  if(td.exists())c.appendChild(el("div","Free trial was used ("+(td.data().startedAt&&td.data().startedAt.toDate?fmt(td.data().startedAt.toDate().getTime()):"")+")","h"));
+  const row=el("div","","row");
+  const sel=el("select");
+  [["30","1 month (30 days)"],["90","3 months (90 days)"],["180","6 months (180 days)"],["365","1 year (365 days)"],["custom","Custom days…"]].forEach(([v,t])=>{const o=el("option",t);o.value=v;sel.appendChild(o)});
+  const cd=el("input");cd.type="number";cd.min="1";cd.placeholder="days";cd.className="hide";
+  sel.onchange=()=>cd.classList.toggle("hide",sel.value!=="custom");
+  const dv=el("div");dv.append(el("label","How long"),sel,cd);row.appendChild(dv);c.appendChild(row);
+  const ex=el("div",null,"sw");ex.appendChild(el("span","Add to the time they still have"));
+  const exb=el("input");exb.type="checkbox";exb.checked=true;ex.appendChild(exb);c.appendChild(ex);
+  const give=el("button",active?"Give / extend Pro":"Give Pro","p");
+  give.onclick=async()=>{
+    const days=sel.value==="custom"?parseInt(cd.value,10):parseInt(sel.value,10);
+    if(!days||days<1||days>3650){toast("Enter the number of days");return}
+    const base=(exb.checked&&active)?until:Date.now();
+    const end=base+days*86400000;
+    if(!confirm("Give "+days+" days of Pro to\n"+p.email+"\nID "+p.appId+"\nEnds: "+fmt(end)))return;
+    try{
+      await setDoc(doc(db,"pro",p.uid),{until:end,plan:days+" days",days,at:Date.now(),appId:p.appId,email:p.email});
+      await log("pro_give",p.appId+" "+p.email+" +"+days+"d");toast("Pro given");drawFound(p);loadPro();
+    }catch(e){toast("Failed: "+(e.code||e.message))}
+  };
+  c.appendChild(give);
+  if(active){
+    const take=el("button","Take Pro away now","d");
+    take.onclick=async()=>{
+      if(!confirm("Take Pro away from\n"+p.email+"\nID "+p.appId+"?"))return;
+      try{await deleteDoc(doc(db,"pro",p.uid));await log("pro_take",p.appId+" "+p.email);toast("Pro taken away");drawFound(p);loadPro()}catch(e){toast("Failed: "+(e.code||e.message))}
+    };
+    c.appendChild(take);
+  }
+  if(td.exists()){
+    const rs=el("button","Reset free trial","s");
+    rs.onclick=async()=>{
+      if(!confirm("Let this person get the 24 hour free trial again?\n"+p.email))return;
+      try{
+        const dev=td.data().device,loc=String(p.email).toLowerCase().split("@")[0].split("+")[0].replace(/\./g,"");
+        await deleteDoc(doc(db,"trial",p.uid));
+        if(dev)await deleteDoc(doc(db,"trialDevices",dev));
+        await deleteDoc(doc(db,"trialEmails",loc+"@gmail.com"));
+        await log("trial_reset",p.appId+" "+p.email);toast("Trial reset");drawFound(p);
+      }catch(e){toast("Failed: "+(e.code||e.message))}
+    };
+    c.appendChild(rs);
+  }
+  box.appendChild(c);
+}
+async function loadPro(){
+  const box=$("prList");box.replaceChildren(el("small","Loading…"));
+  try{
+    const [pr,pf]=await Promise.all([getDocs(collection(db,"pro")),getDocs(collection(db,"profiles"))]);
+    const prof={};pf.forEach(d=>{prof[d.id]=d.data()});
+    const rows=[];pr.forEach(d=>{const x=d.data(),u=Number(x.until)||0;if(u>Date.now())rows.push({uid:d.id,until:u,...x})});
+    rows.sort((a,b)=>a.until-b.until);
+    box.replaceChildren();
+    if(!rows.length){box.appendChild(el("small","No one has Pro right now."));return}
+    rows.forEach(x=>{
+      const p=prof[x.uid]||{},i=el("div",null,"item");
+      i.appendChild(el("b",p.email||x.email||x.uid));i.appendChild(el("br"));
+      const idl=el("span","ID: "+(p.appId||x.appId||"?"));idl.style.cssText="user-select:all;font-weight:600";i.appendChild(idl);i.appendChild(el("br"));
+      i.appendChild(el("small",leftTxt(x.until-Date.now())+" left · ends "+fmt(x.until)+" · plan "+(x.plan||"?")));
+      const r=el("div");
+      const t=el("button","Take away","d");
+      t.onclick=async()=>{
+        if(!confirm("Take Pro away from "+(p.email||x.uid)+"?"))return;
+        try{await deleteDoc(doc(db,"pro",x.uid));await log("pro_take",(p.appId||"")+" "+(p.email||x.uid));toast("Pro taken away");loadPro()}catch(e){toast("Failed: "+(e.code||e.message))}
+      };
+      r.appendChild(t);i.appendChild(r);box.appendChild(i);
+    });
+  }catch(e){box.replaceChildren(el("small","Could not read: "+(e.code||e.message)))}
 }
 
 // ---------- log ----------
