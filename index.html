@@ -156,8 +156,8 @@ h2{font-size:16px;margin:0 0 6px}p.h{color:var(--mut);margin:0 0 6px;font-size:1
       <div id="prFound" style="margin-top:12px"></div>
     </div>
     <div class="card">
-      <h2>People with Pro now</h2>
-      <p class="h">Time left for each person. You can take Pro away before the time is over.</p>
+      <h2>Pro and free trial</h2>
+      <p class="h">Real Pro (given by you) and people on the 24 hour free trial, with the time left for each. You can take real Pro away before the time is over.</p>
       <div id="prList"><small>Loading…</small></div>
     </div>
   </section>
@@ -577,12 +577,22 @@ async function drawFound(p){
 async function loadPro(){
   const box=$("prList");box.replaceChildren(el("small","Loading…"));
   try{
-    const [pr,pf]=await Promise.all([getDocs(collection(db,"pro")),getDocs(collection(db,"profiles"))]);
+    const [pr,pf,tr]=await Promise.all([getDocs(collection(db,"pro")),getDocs(collection(db,"profiles")),getDocs(collection(db,"trial"))]);
     const prof={};pf.forEach(d=>{prof[d.id]=d.data()});
     const rows=[];pr.forEach(d=>{const x=d.data(),u=Number(x.until)||0;if(u>Date.now())rows.push({uid:d.id,until:u,...x})});
     rows.sort((a,b)=>a.until-b.until);
     box.replaceChildren();
-    if(!rows.length){box.appendChild(el("small","No one has Pro right now."));return}
+    // Free 24 hour trials that are still running, and how many trials were used in all.
+    const trials=[];let trialAll=0;
+    tr.forEach(d=>{
+      const x=d.data();trialAll++;
+      let st=0;try{st=x.startedAt&&x.startedAt.toDate?x.startedAt.toDate().getTime():Number(x.startedAt)||0}catch(e){}
+      const end=st+86400000;
+      if(st&&end>Date.now())trials.push({uid:d.id,end:end,start:st});
+    });
+    trials.sort((a,b)=>a.end-b.end);
+    const h1=el("h3","Real Pro: "+rows.length+" "+(rows.length===1?"person":"people"));h1.style.margin="4px 0 8px";box.appendChild(h1);
+    if(!rows.length)box.appendChild(el("small","No one has Pro right now."));
     rows.forEach(x=>{
       const p=prof[x.uid]||{},i=el("div",null,"item");
       i.appendChild(el("b",p.email||x.email||x.uid));i.appendChild(el("br"));
@@ -595,6 +605,15 @@ async function loadPro(){
         try{await deleteDoc(doc(db,"pro",x.uid));await log("pro_take",(p.appId||"")+" "+(p.email||x.uid));toast("Pro taken away");loadPro()}catch(e){toast("Failed: "+(e.code||e.message))}
       };
       r.appendChild(t);i.appendChild(r);box.appendChild(i);
+    });
+    const h2=el("h3","Free trial running now: "+trials.length+" · trials used in all: "+trialAll);h2.style.margin="18px 0 8px";box.appendChild(h2);
+    if(!trials.length)box.appendChild(el("small","No free trial is running right now."));
+    trials.forEach(x=>{
+      const p=prof[x.uid]||{},i=el("div",null,"item");
+      i.appendChild(el("b",p.email||x.uid));i.appendChild(el("br"));
+      const idl=el("span","ID: "+(p.appId||"?"));idl.style.cssText="user-select:all;font-weight:600";i.appendChild(idl);i.appendChild(el("br"));
+      i.appendChild(el("small","Free trial · "+leftTxt(x.end-Date.now())+" left · started "+fmt(x.start)+" · ends "+fmt(x.end)));
+      box.appendChild(i);
     });
   }catch(e){box.replaceChildren(el("small","Could not read: "+(e.code||e.message)))}
 }
