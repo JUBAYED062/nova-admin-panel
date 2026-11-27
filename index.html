@@ -172,7 +172,7 @@ h2{font-size:16px;margin:0 0 6px}p.h{color:var(--mut);margin:0 0 6px;font-size:1
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { getFirestore, doc, getDoc, setDoc, addDoc, deleteDoc, updateDoc, collection, getDocs, writeBatch, getCountFromServer, query, where, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getFirestore, doc as fDoc, getDoc as fGetDoc, setDoc as fSetDoc, addDoc as fAddDoc, deleteDoc as fDeleteDoc, updateDoc as fUpdateDoc, collection as fCollection, getDocs as fGetDocs, writeBatch as fWriteBatch, getCountFromServer as fCount, query as fQuery, where as fWhere, orderBy as fOrderBy, limit as fLimit } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const ADMIN_EMAIL = "jubayedking062@gmail.com";
 const app = initializeApp({
@@ -199,6 +199,93 @@ async function sb(method,path,body,prefer){
   if(!r.ok){let t="";try{t=await r.text()}catch(e){}throw new Error("Supabase "+r.status+" "+t.slice(0,120))}
   const t=await r.text();
   return t?JSON.parse(t):null;
+}
+
+// ---------- data layer: Supabase for the live data, Firebase only for old copies ----------
+const SBT={usage:{t:"usage",id:"uid"},profiles:{t:"profiles",id:"uid"},trial:{t:"trial",id:"uid"},bans:{t:"bans",id:"uid"},feedback:{t:"feedback",id:"uid"},notices:{t:"notices",id:"id"},versions:{t:"versions",id:"id"},admin_log:{t:"admin_log",id:"id"},trialDevices:{t:"trial_devices",id:"device"},trialEmails:{t:"trial_emails",id:"email"},appIds:{t:"profiles",id:"app_id"}};
+const snake=k=>k.replace(/[A-Z]/g,c=>"_"+c.toLowerCase()), camel=k=>k.replace(/_([a-z])/g,(m,c)=>c.toUpperCase());
+function rowToData(row){const o={};for(const k in row){o[camel(k)]=row[k]}
+  if(o.startedAt!=null){const ms=Number(o.startedAt);o.startedAt={toDate:()=>new Date(ms),toMillis:()=>ms}}
+  return o}
+function dataToRow(d){const o={};for(const k in d){if(d[k]!==undefined)o[snake(k)]=d[k]}return o}
+function isSb(x){return x&&x.__sb}
+function doc(d,coll,id){return SBT[coll]?{__sb:true,kind:"doc",coll,id:String(id)}:fDoc(d,coll,id)}
+function collection(d,coll){return SBT[coll]?{__sb:true,kind:"col",coll,f:[],o:null,l:null}:fCollection(d,coll)}
+const where=(f,op,v)=>({__c:"w",a:[f,op,v]}), orderBy=(f,dir)=>({__c:"o",a:[f,dir]}), limit=n=>({__c:"l",a:[n]});
+function query(c,...cs){
+  if(!isSb(c))return fQuery(c,...cs.map(x=>x.__c==="w"?fWhere(...x.a):x.__c==="o"?fOrderBy(...x.a):fLimit(...x.a)));
+  const q={...c,f:[...c.f]};
+  cs.forEach(x=>{if(x.__c==="w")q.f.push(x.a);else if(x.__c==="o")q.o=x.a;else q.l=x.a[0]});
+  return q;
+}
+function qs(q){
+  const m=SBT[q.coll];let p=[];
+  q.f.forEach(([f,op,v])=>{p.push(snake(f)+"="+(op==="=="?"eq":op===">="?"gte":op==="<="?"lte":"eq")+"."+encodeURIComponent(v))});
+  if(q.o)p.push("order="+snake(q.o[0])+"."+(q.o[1]==="desc"?"desc":"asc"));
+  return {m,p};
+}
+async function sbPage(path){ // all rows, 1000 at a time
+  let out=[],off=0;
+  for(;;){
+    const r=await sb("GET",path+(path.includes("?")?"&":"?")+"limit=1000&offset="+off);
+    if(!r||!r.length)break;out=out.concat(r);if(r.length<1000)break;off+=1000;
+  }
+  return out;
+}
+function snapOf(rows,m){
+  const docs=rows.map(r=>({id:String(r[m.id==="app_id"?"uid":m.id]),data:()=>rowToData(r)}));
+  return {docs,size:docs.length,empty:!docs.length,forEach:cb=>docs.forEach(cb)};
+}
+async function getDocs(q){
+  if(!isSb(q))return fGetDocs(q);
+  const {m,p}=qs(q);
+  let rows=await sbPage(m.t+"?select=*"+(p.length?"&"+p.join("&"):""));
+  if(q.l)rows=rows.slice(0,q.l);
+  return snapOf(rows,m);
+}
+async function getDoc(r){
+  if(!isSb(r))return fGetDoc(r);
+  const m=SBT[r.coll];
+  const rows=await sb("GET",m.t+"?select=*&"+m.id+"=eq."+encodeURIComponent(r.id)+"&limit=1");
+  const row=rows&&rows[0];
+  if(r.coll==="appIds")return {exists:()=>!!row,data:()=>({uid:row.uid}),id:r.id};
+  return {exists:()=>!!row,data:()=>row?rowToData(row):{},id:r.id};
+}
+async function setDoc(r,data,opt){
+  if(!isSb(r))return fSetDoc(r,data,opt);
+  const m=SBT[r.coll],row=dataToRow(data);row[m.id]=m.id==="id"?Number(r.id):r.id;
+  await sb("POST",m.t+"?on_conflict="+m.id,[row],"resolution=merge-duplicates,return=minimal");
+}
+async function addDoc(c,data){
+  if(!isSb(c))return fAddDoc(c,data);
+  await sb("POST",SBT[c.coll].t,[dataToRow(data)],"return=minimal");
+}
+async function updateDoc(r,data){
+  if(!isSb(r))return fUpdateDoc(r,data);
+  const m=SBT[r.coll];
+  await sb("PATCH",m.t+"?"+m.id+"=eq."+encodeURIComponent(r.id),dataToRow(data),"return=minimal");
+}
+async function deleteDoc(r){
+  if(!isSb(r))return fDeleteDoc(r);
+  const m=SBT[r.coll];
+  await sb("DELETE",m.t+"?"+m.id+"=eq."+encodeURIComponent(r.id),null,"return=minimal");
+}
+async function getCountFromServer(q){
+  if(!isSb(q))return fCount(q);
+  const {m,p}=qs(q);
+  const tok=await auth.currentUser.getIdToken();
+  const r=await fetch(SB_URL+m.t+"?select="+m.id+(p.length?"&"+p.join("&"):"")+"&limit=1",{headers:{apikey:SB_KEY,Authorization:"Bearer "+tok,Prefer:"count=exact"}});
+  const cr=r.headers.get("content-range")||"";
+  const n=parseInt(cr.split("/")[1],10);
+  return {data:()=>({count:isNaN(n)?0:n})};
+}
+function writeBatch(d){
+  const ops=[];
+  return {
+    delete:r=>ops.push(()=>deleteDoc(r)),
+    update:(r,data)=>ops.push(()=>updateDoc(r,data)),
+    commit:async()=>{for(let i=0;i<ops.length;i+=10){await Promise.all(ops.slice(i,i+10).map(f=>f()))}}
+  };
 }
 
 function toast(m){const t=$("toast");t.textContent=m;t.style.display="block";clearTimeout(toast.t);toast.t=setTimeout(()=>t.style.display="none",3200)}
@@ -334,12 +421,45 @@ async function loadDash(){
     if(!keys.length)vt.appendChild(el("small","No users recorded yet. They appear after they open the new app version."));
     keys.forEach(k=>{const i=el("div",null,"item");i.appendChild(el("b","Version "+k));i.appendChild(el("span","  "+m[k]+" users","pill"));vt.appendChild(i)});
   }catch(e){vt.appendChild(el("small","Could not read usage: "+e.code))}
+  addMigrateCard();
   const dn=$("dashNotices");dn.replaceChildren();
   try{
     const s=await getDocs(query(collection(db,"notices"),orderBy("at","desc"),limit(3)));
     if(s.empty)dn.appendChild(el("small","No notices."));
     s.forEach(d=>{const x=d.data(),i=el("div",null,"item");i.appendChild(el("b",(x.pinned?"📌 ":"")+x.title));i.appendChild(el("div",x.body));i.appendChild(el("small",x.type+" · "+fmt(x.at)));dn.appendChild(i)});
   }catch(e){dn.appendChild(el("small","Could not read notices."))}
+}
+
+
+// ---------- one-time copy: Firebase -> Supabase ----------
+async function migrateOld(out){
+  const say=t=>{out.textContent=t};
+  const N=v=>Number(v)||0, tsMs=v=>{try{return v&&v.toMillis?v.toMillis():N(v)}catch(e){return 0}};
+  const put=async(table,conflict,rows)=>{for(let i=0;i<rows.length;i+=200){await sb("POST",table+"?on_conflict="+conflict,rows.slice(i,i+200),"resolution=merge-duplicates,return=minimal")}};
+  const read=async c=>{const r=[];(await fGetDocs(fCollection(db,c))).forEach(d=>r.push({id:d.id,d:d.data()}));return r};
+  let t;
+  say("Copying IDs…");t=await read("profiles");
+  await put("profiles","uid",t.map(x=>({uid:x.id,app_id:x.d.appId,email:x.d.email||"",created_at:tsMs(x.d.createdAt)})).filter(r=>r.app_id));say("IDs: "+t.length);
+  t=await read("trial");await put("trial","uid",t.map(x=>({uid:x.id,device:x.d.device||"",started_at:tsMs(x.d.startedAt)})));say("Trials: "+t.length);
+  t=await read("trialDevices");await put("trial_devices","device",t.map(x=>({device:x.id,uid:x.d.uid||""})));
+  t=await read("trialEmails");await put("trial_emails","email",t.map(x=>({email:x.id,uid:x.d.uid||""})));
+  t=await read("bans");await put("bans","uid",t.map(x=>({uid:x.id,at:N(x.d.at),device:x.d.device||""})));
+  say("Copying users…");t=await read("usage");
+  await put("usage","uid",t.map(x=>({uid:x.id,first_seen:N(x.d.firstSeen),last_seen:N(x.d.lastSeen),version_code:N(x.d.versionCode),version_name:x.d.versionName||"",device:x.d.device||"",android:x.d.android||"",country:x.d.country||"",lang:x.d.lang||""})));
+  const have=async tb=>{const r=await sb("GET",tb+"?select=id&limit=1");return r&&r.length>0};
+  if(!(await have("notices"))){t=await read("notices");const rows=t.map(x=>({title:x.d.title||"",body:x.d.body||"",type:x.d.type||"general",pinned:x.d.pinned===true||x.d.pinned==="true",at:N(x.d.at),image:x.d.image||""}));for(let i=0;i<rows.length;i+=200)await sb("POST","notices",rows.slice(i,i+200),"return=minimal")}
+  if(!(await have("versions"))){t=await read("versions");const rows=t.map(x=>({name:x.d.name||"",code:N(x.d.code),notes:x.d.notes||"",url:x.d.url||"",at:N(x.d.at),force:x.d.force===true}));for(let i=0;i<rows.length;i+=200)await sb("POST","versions",rows.slice(i,i+200),"return=minimal")}
+  t=await read("feedback");await put("feedback","uid",t.map(x=>({uid:x.id,type:x.d.type||"",message:x.d.message||"",contact:x.d.contact||"",version_name:x.d.versionName||"",version_code:String(x.d.versionCode||""),device:x.d.device||"",android:x.d.android||"",at:N(x.d.at),status:x.d.status||"new"})));
+  say("Done. Everything was copied to Supabase.");
+}
+function addMigrateCard(){
+  const host=$("t-dash");if(!host||$("migCard"))return;
+  const c=el("div",null,"card");c.id="migCard";
+  c.appendChild(el("h3","Copy old data to Supabase (one time)"));
+  c.appendChild(el("small","Copies IDs, trials, users, notices, bans and feedback from Firebase to Supabase. Safe to press more than once."));
+  const o=el("div");o.style.margin="8px 0";const b=el("button","Copy now","p");
+  b.onclick=async()=>{b.disabled=true;try{await migrateOld(o)}catch(e){o.textContent="Failed: "+(e.code||e.message)}b.disabled=false};
+  c.append(o,b);host.appendChild(c);
 }
 
 // ---------- updates ----------
