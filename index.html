@@ -434,7 +434,7 @@ async function loadDash(){
 async function migrateOld(out){
   const say=t=>{out.textContent=t};
   const N=v=>Number(v)||0, tsMs=v=>{try{return v&&v.toMillis?v.toMillis():N(v)}catch(e){return 0}};
-  const put=async(table,conflict,rows)=>{for(let i=0;i<rows.length;i+=200){await sb("POST",table+"?on_conflict="+conflict,rows.slice(i,i+200),"resolution=merge-duplicates,return=minimal")}};
+  const put=async(table,conflict,rows)=>{for(let i=0;i<rows.length;i+=200){await sb("POST",table+"?on_conflict="+conflict,rows.slice(i,i+200),"resolution=ignore-duplicates,return=minimal")}};
   const read=async c=>{const r=[];(await fGetDocs(fCollection(db,c))).forEach(d=>r.push({id:d.id,d:d.data()}));return r};
   let t;
   say("Copying IDs…");t=await read("profiles");
@@ -456,7 +456,7 @@ function addMigrateCard(){
   const host=$("t-dash");if(!host||$("migCard"))return;
   const c=el("div",null,"card");c.id="migCard";
   c.appendChild(el("h3","Copy old data to Supabase (one time)"));
-  c.appendChild(el("small","Copies IDs, trials, users, notices, bans and feedback from Firebase to Supabase. Safe to press more than once."));
+  c.appendChild(el("small","Copies IDs, trials, users, notices, bans and feedback from Firebase to Supabase. Only adds what is missing; nothing already in Supabase is changed. Not needed any more once it said Done."));
   const o=el("div");o.style.margin="8px 0";const b=el("button","Copy now","p");
   b.onclick=async()=>{b.disabled=true;try{await migrateOld(o)}catch(e){o.textContent="Failed: "+(e.code||e.message)}b.disabled=false};
   c.append(o,b);host.appendChild(c);
