@@ -399,8 +399,7 @@ async function loadDash(){
   let rd="?";
   try{
     const pk=new Date().toLocaleDateString("en-CA",{timeZone:"America/Los_Angeles"}).replace(/-/g,"");
-    const rs=await getDoc(doc(db,"stats","r"+pk));
-    rd=rs.exists()?String(rs.data().n||0):"0";
+    rd="not used now";
   }catch(e){}
   const mOn=cfg.maintenance===true||cfg.maintenance==="true";
   st.append(
@@ -449,6 +448,7 @@ async function migrateOld(out){
   const have=async tb=>{const r=await sb("GET",tb+"?select=id&limit=1");return r&&r.length>0};
   if(!(await have("notices"))){t=await read("notices");const rows=t.map(x=>({title:x.d.title||"",body:x.d.body||"",type:x.d.type||"general",pinned:x.d.pinned===true||x.d.pinned==="true",at:N(x.d.at),image:x.d.image||""}));for(let i=0;i<rows.length;i+=200)await sb("POST","notices",rows.slice(i,i+200),"return=minimal")}
   if(!(await have("versions"))){t=await read("versions");const rows=t.map(x=>({name:x.d.name||"",code:N(x.d.code),notes:x.d.notes||"",url:x.d.url||"",at:N(x.d.at),force:x.d.force===true}));for(let i=0;i<rows.length;i+=200)await sb("POST","versions",rows.slice(i,i+200),"return=minimal")}
+  t=await read("pro");{const rows=t.map(x=>({uid:x.id,until_ms:N(x.d.until),plan:x.d.plan||"",email:x.d.email||"",app_id:x.d.appId||"",updated_at:Date.now()}));for(let i=0;i<rows.length;i+=200)await sb("POST","pro?on_conflict=uid",rows.slice(i,i+200),"resolution=ignore-duplicates,return=minimal")}
   t=await read("feedback");await put("feedback","uid",t.map(x=>({uid:x.id,type:x.d.type||"",message:x.d.message||"",contact:x.d.contact||"",version_name:x.d.versionName||"",version_code:String(x.d.versionCode||""),device:x.d.device||"",android:x.d.android||"",at:N(x.d.at),status:x.d.status||"new"})));
   say("Done. Everything was copied to Supabase.");
 }
@@ -688,7 +688,7 @@ async function takePro(uid,email,appId){
   await sb("POST","pro?on_conflict=uid",[{uid,until_ms:0,plan:"taken",email:email||"",app_id:appId||"",updated_at:Date.now()}],"resolution=merge-duplicates,return=minimal");
   try{await deleteDoc(doc(db,"pro",uid))}catch(e){console.log(e)}
 }
-let proCopied=false;
+let proCopied=true; // old Firebase Pro list was already copied; no Firebase reads here any more
 async function drawFound(p){
   const box=$("prFound");box.replaceChildren();
   let until=0,sbFound=false;
