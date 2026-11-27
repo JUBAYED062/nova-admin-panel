@@ -184,13 +184,34 @@ const app = initializeApp({
 const auth = getAuth(app), db = getFirestore(app);
 const $ = id => document.getElementById(id);
 let cfg = {};
+const SB_URL="https://dsmwgrhahyptduwkfgke.supabase.co/rest/v1/";
+const SB_KEY="sb_publishable_6z2N92CSp_r7Ii6ItYjI4Q_GRH87tZc";
+// Supabase call with the admin's Firebase sign-in. Returns parsed JSON (or null for empty answers). Throws on failure.
+async function sb(method,path,body,prefer){
+  async function go(force){
+    const tok=await auth.currentUser.getIdToken(force);
+    const h={apikey:SB_KEY,Authorization:"Bearer "+tok,"Content-Type":"application/json"};
+    if(prefer)h.Prefer=prefer;
+    return fetch(SB_URL+path,{method,headers:h,body:body==null?undefined:JSON.stringify(body)});
+  }
+  let r=await go(false);
+  if(r.status===401||r.status===403)r=await go(true);
+  if(!r.ok){let t="";try{t=await r.text()}catch(e){}throw new Error("Supabase "+r.status+" "+t.slice(0,120))}
+  const t=await r.text();
+  return t?JSON.parse(t):null;
+}
 
 function toast(m){const t=$("toast");t.textContent=m;t.style.display="block";clearTimeout(toast.t);toast.t=setTimeout(()=>t.style.display="none",3200)}
 function fmt(ms){const n=Number(ms);return n?new Date(n).toLocaleString():"-"}
 function el(tag,txt,cls){const e=document.createElement(tag);if(txt!=null)e.textContent=txt;if(cls)e.className=cls;return e}
 async function log(action,detail){try{await addDoc(collection(db,"admin_log"),{at:Date.now(),email:auth.currentUser.email,action,detail:String(detail||"").slice(0,300)})}catch(e){}}
 async function saveCfg(patch,action,detail){
-  await setDoc(doc(db,"config","app"),patch,{merge:true});
+  const rows=Object.keys(patch).map(k=>({key:k,value:patch[k]==null?"":String(patch[k])}));
+  let sbOk=true,fsOk=true,err=null;
+  try{await sb("POST","config?on_conflict=key",rows,"resolution=merge-duplicates,return=minimal")}catch(e){sbOk=false;err=e}
+  // Old app versions still read Firebase: keep it updated when possible (it may be full, that is fine).
+  try{await setDoc(doc(db,"config","app"),patch,{merge:true})}catch(e){fsOk=false;if(!err)err=e}
+  if(!sbOk)throw err;
   Object.assign(cfg,patch);
   await log(action,detail);
 }
@@ -225,7 +246,22 @@ onAuthStateChanged(auth,async u=>{
 
 // ---------- config ----------
 async function loadCfg(){
-  const s=await getDoc(doc(db,"config","app"));cfg=s.exists()?s.data():{};
+  cfg={};let got=false;
+  try{
+    const rows=await sb("GET","config?select=key,value");
+    if(rows&&rows.length){rows.forEach(r=>{cfg[r.key]=r.value});got=!!cfg.latest_version_code}
+  }catch(e){console.log(e)}
+  if(!got){
+    // Supabase has no full copy yet: take the Firebase one and save it into Supabase once.
+    try{
+      const s=await getDoc(doc(db,"config","app"));
+      if(s.exists()){
+        const d=s.data();Object.assign(cfg,d);
+        const rows=Object.keys(d).map(k=>({key:k,value:d[k]==null?"":String(d[k])}));
+        try{await sb("POST","config?on_conflict=key",rows,"resolution=merge-duplicates,return=minimal")}catch(e){console.log(e)}
+      }
+    }catch(e){toast("Could not read Firebase settings: "+(e.code||e.message))}
+  }
   $("vName").value=cfg.latest_version_name||"";$("vCode").value=cfg.latest_version_code||"";
   $("vNotes").value=cfg.update_notes||"";$("vUrl").value=cfg.update_url||"";
   $("vForce").checked=cfg.force_update===true||cfg.force_update==="true";$("vMin").value=cfg.min_version_code||"";
@@ -273,8 +309,15 @@ async function loadDash(){
   let total="?",active="?";
   try{total=(await getCountFromServer(collection(db,"usage"))).data().count}catch(e){}
   try{active=(await getCountFromServer(query(collection(db,"usage"),where("lastSeen",">=",String(Date.now()-7*864e5))))).data().count}catch(e){}
+  let rd="?";
+  try{
+    const pk=new Date().toLocaleDateString("en-CA",{timeZone:"America/Los_Angeles"}).replace(/-/g,"");
+    const rs=await getDoc(doc(db,"stats","r"+pk));
+    rd=rs.exists()?String(rs.data().n||0):"0";
+  }catch(e){}
   const mOn=cfg.maintenance===true||cfg.maintenance==="true";
   st.append(
+    stat("Reads today (app estimate)",rd),
     stat("Total users",total),stat("Active (7 days)",active),
     stat("Latest version",(cfg.latest_version_name||"-")+(cfg.latest_version_code?" ("+cfg.latest_version_code+")":"")),
     stat("Force update",(cfg.force_update===true||cfg.force_update==="true")?"On":"Off",(cfg.force_update===true||cfg.force_update==="true")?"warn":""),
@@ -520,10 +563,19 @@ $("btnPrFind").onclick=async()=>{
   }catch(e){box.replaceChildren(el("small","Could not search: "+(e.code||e.message)))}
 };
 $("prQ").onkeydown=e=>{if(e.key==="Enter")$("btnPrFind").click()};
+// Taking Pro away: Supabase keeps a row with 0 time (so phones see it), Firebase copy is deleted when possible.
+async function takePro(uid,email,appId){
+  await sb("POST","pro?on_conflict=uid",[{uid,until_ms:0,plan:"taken",email:email||"",app_id:appId||"",updated_at:Date.now()}],"resolution=merge-duplicates,return=minimal");
+  try{await deleteDoc(doc(db,"pro",uid))}catch(e){console.log(e)}
+}
+let proCopied=false;
 async function drawFound(p){
   const box=$("prFound");box.replaceChildren();
-  const pd=await getDoc(doc(db,"pro",p.uid)),td=await getDoc(doc(db,"trial",p.uid));
-  const until=pd.exists()?Number(pd.data().until)||0:0,active=until>Date.now();
+  let until=0,sbFound=false;
+  try{const r=await sb("GET","pro?uid=eq."+encodeURIComponent(p.uid)+"&select=until_ms");if(r&&r.length){until=Number(r[0].until_ms)||0;sbFound=true}}catch(e){console.log(e)}
+  if(!sbFound){try{const pd=await getDoc(doc(db,"pro",p.uid));if(pd.exists())until=Number(pd.data().until)||0}catch(e){console.log(e)}}
+  let td;try{td=await getDoc(doc(db,"trial",p.uid))}catch(e){td={exists:()=>false,data:()=>({})}}
+  const active=until>Date.now();
   const c=el("div",null,"item");
   c.appendChild(el("b",p.email));c.appendChild(el("br"));
   const idl=el("span","ID: "+p.appId);idl.style.cssText="user-select:all;font-weight:600";c.appendChild(idl);c.appendChild(el("br"));
@@ -545,7 +597,8 @@ async function drawFound(p){
     const end=base+days*86400000;
     if(!confirm("Give "+days+" days of Pro to\n"+p.email+"\nID "+p.appId+"\nEnds: "+fmt(end)))return;
     try{
-      await setDoc(doc(db,"pro",p.uid),{until:end,plan:days+" days",days,at:Date.now(),appId:p.appId,email:p.email});
+      await sb("POST","pro?on_conflict=uid",[{uid:p.uid,until_ms:end,plan:days+" days",email:p.email||"",app_id:p.appId||"",updated_at:Date.now()}],"resolution=merge-duplicates,return=minimal");
+      try{await setDoc(doc(db,"pro",p.uid),{until:end,plan:days+" days",days,at:Date.now(),appId:p.appId,email:p.email})}catch(e){console.log(e)}
       await log("pro_give",p.appId+" "+p.email+" +"+days+"d");toast("Pro given");drawFound(p);loadPro();
     }catch(e){toast("Failed: "+(e.code||e.message))}
   };
@@ -554,7 +607,7 @@ async function drawFound(p){
     const take=el("button","Take Pro away now","d");
     take.onclick=async()=>{
       if(!confirm("Take Pro away from\n"+p.email+"\nID "+p.appId+"?"))return;
-      try{await deleteDoc(doc(db,"pro",p.uid));await log("pro_take",p.appId+" "+p.email);toast("Pro taken away");drawFound(p);loadPro()}catch(e){toast("Failed: "+(e.code||e.message))}
+      try{await takePro(p.uid,p.email,p.appId);await log("pro_take",p.appId+" "+p.email);toast("Pro taken away");drawFound(p);loadPro()}catch(e){toast("Failed: "+(e.code||e.message))}
     };
     c.appendChild(take);
   }
@@ -577,9 +630,20 @@ async function drawFound(p){
 async function loadPro(){
   const box=$("prList");box.replaceChildren(el("small","Loading…"));
   try{
-    const [pr,pf,tr]=await Promise.all([getDocs(collection(db,"pro")),getDocs(collection(db,"profiles")),getDocs(collection(db,"trial"))]);
+    // Pro list: Supabase. The first time, Pro people that exist only in Firebase are copied over.
+    let sbRows=await sb("GET","pro?select=uid,until_ms,plan,email,app_id");
+    const known={};(sbRows||[]).forEach(r=>{known[r.uid]=1});
+    if(!proCopied){
+      proCopied=true;
+      try{
+        const old=await getDocs(collection(db,"pro"));const add=[];
+        old.forEach(d=>{if(!known[d.id]){const x=d.data();add.push({uid:d.id,until_ms:Number(x.until)||0,plan:x.plan||"",email:x.email||"",app_id:x.appId||"",updated_at:Date.now()})}});
+        if(add.length){await sb("POST","pro?on_conflict=uid",add,"resolution=merge-duplicates,return=minimal");sbRows=sbRows.concat(add.map(a=>({uid:a.uid,until_ms:a.until_ms,plan:a.plan,email:a.email,app_id:a.app_id})));toast("Copied "+add.length+" Pro account(s) to Supabase")}
+      }catch(e){console.log(e)}
+    }
+    const [pf,tr]=await Promise.all([getDocs(collection(db,"profiles")),getDocs(collection(db,"trial"))]);
     const prof={};pf.forEach(d=>{prof[d.id]=d.data()});
-    const rows=[];pr.forEach(d=>{const x=d.data(),u=Number(x.until)||0;if(u>Date.now())rows.push({uid:d.id,until:u,...x})});
+    const rows=[];(sbRows||[]).forEach(r=>{const u=Number(r.until_ms)||0;if(u>Date.now())rows.push({uid:r.uid,until:u,plan:r.plan,email:r.email,appId:r.app_id})});
     rows.sort((a,b)=>a.until-b.until);
     box.replaceChildren();
     // Free 24 hour trials that are still running, and how many trials were used in all.
@@ -602,7 +666,7 @@ async function loadPro(){
       const t=el("button","Take away","d");
       t.onclick=async()=>{
         if(!confirm("Take Pro away from "+(p.email||x.uid)+"?"))return;
-        try{await deleteDoc(doc(db,"pro",x.uid));await log("pro_take",(p.appId||"")+" "+(p.email||x.uid));toast("Pro taken away");loadPro()}catch(e){toast("Failed: "+(e.code||e.message))}
+        try{await takePro(x.uid,p.email||x.email||"",p.appId||x.appId||"");await log("pro_take",(p.appId||"")+" "+(p.email||x.uid));toast("Pro taken away");loadPro()}catch(e){toast("Failed: "+(e.code||e.message))}
       };
       r.appendChild(t);i.appendChild(r);box.appendChild(i);
     });
