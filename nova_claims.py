@@ -1,5 +1,5 @@
 """Nova claims: puts role=authenticated on every Firebase user, so Supabase accepts their sign-in token.
-Runs on GitHub Actions (free): each run keeps checking every 30 seconds for about 27 minutes, so new users get access within seconds. It only changes users that do not have it yet. No Firestore reads."""
+Runs on GitHub Actions (free): each run keeps checking every 15 seconds for about 5 hours 40 minutes, then starts the next run itself, so new users get access within seconds. It only changes users that do not have it yet. No Firestore reads."""
 import json, os, sys
 from google.oauth2 import service_account
 from google.auth.transport.requests import AuthorizedSession
@@ -47,7 +47,7 @@ def once():
     return bad
 
 
-END = time.time() + 27*60
+END = time.time() + 5*3600 + 40*60
 fails = 0
 while True:
     try:
@@ -57,5 +57,5 @@ while True:
         fails = 1
     if time.time() > END:
         break
-    time.sleep(30)
+    time.sleep(15)
 sys.exit(1 if fails else 0)
