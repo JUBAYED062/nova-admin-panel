@@ -3,13 +3,16 @@ on:
   schedule:
     - cron: "*/30 * * * *"
   workflow_dispatch: {}
+permissions:
+  contents: read
+  actions: write
 concurrency:
   group: nova-claims
   cancel-in-progress: false
 jobs:
   claims:
     runs-on: ubuntu-latest
-    timeout-minutes: 35
+    timeout-minutes: 350
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -19,3 +22,8 @@ jobs:
       - run: python nova_claims.py
         env:
           GCP_KEY: ${{ secrets.GCP_KEY }}
+      - name: Start the next run
+        if: always()
+        run: gh workflow run nova-claims.yml
+        env:
+          GH_TOKEN: ${{ github.token }}
